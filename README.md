@@ -1,4 +1,4 @@
-MIND
+MIND (Multi-measure INdividual Deconvolution)
 =====
 
 ### Using Multiple Measurements of Tissue to Estimate Individual- And Cell-Type-Specific Gene Expression via Deconvolution
