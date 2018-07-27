@@ -1,0 +1,7 @@
+exportPattern("^[[:alpha:]]+")
+importFrom("stats", "cov.wt")
+export(mind)
+export(get_alpha)
+export(get_network)
+importFrom(igraph, V, graph_from_adjacency_matrix)
+importFrom(edgebundleR, edgebundle)
