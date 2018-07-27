@@ -25,5 +25,10 @@ deconv = mind(X = example$X, W = example$W)
 get_network(alpha = deconv$alpha, W = example$W, cell_type = 3, cor_cutoff = 0.7)
 ```
 
+For details, please see the [PDF manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).
+
+The cell type fraction can be pre-estimated using standard deconvolution method (e.g., [CIBERSORT](https://cibersort.stanford.edu)) and reference samples of purified cells (e.g., [NeuroExpresso](https://pavlab.msl.ubc.ca/data-and-supplementary-information/supplement-to-mancarci-et-al-neuroexpresso/) for brain tissue) or single-cell RNA-seq data.
+
+
 ### Reference
 Wang, Jiebiao, Bernie Devlin, Kathryn Roeder. Using multiple measurements of tissue to estimate individual- and cell-type-specific gene expression via deconvolution. Submitted.
