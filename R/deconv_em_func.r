@@ -36,7 +36,7 @@ mind = function(X, W, maxIter = 100, tol = 0.001, verbose = F) {
   deconv = deconv_xx2(X, XX1, W, maxIter = maxIter, tol = tol, verbose = verbose)
   alpha = get_alpha(X, W, deconv)
 
-  return(list(alpha = alpha, iter = deconv$iter, Sigma_c = deconv$Sigma_c, sigma2_e = deconv$sigma2_e, loglikelihood = deconv$likelihood))
+  return(list(alpha = alpha, iter = deconv$iter, Sigma_c = deconv$Sigma_c, sigma2_e = deconv$sigma2_e, loglikelihood = deconv$loglikelihood))
 }
 
 
