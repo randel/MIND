@@ -31,4 +31,4 @@ The cell type fraction can be pre-estimated using standard deconvolution method 
 
 
 ### Reference
-Wang, Jiebiao, Bernie Devlin, Kathryn Roeder. Using multiple measurements of tissue to estimate individual- and cell-type-specific gene expression via deconvolution. bioRxiv 379099; doi: https://doi.org/10.1101/379099
+Jiebiao Wang, Bernie Devlin, Kathryn Roeder. Using multiple measurements of tissue to estimate individual- and cell-type-specific gene expression via deconvolution. bioRxiv 379099; doi: https://doi.org/10.1101/379099
