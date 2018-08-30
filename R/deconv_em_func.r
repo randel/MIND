@@ -226,7 +226,7 @@ get_network = function(alpha, W, cell_type, cor_cutoff = 0.9, gene_color = "#CD2
   }
 
   rownames(wcor_exp) = colnames(wcor_exp) = rownames(alpha)
-  g = graph_from_adjacency_matrix(wcor_exp[,,cell_type] > cor_cutoff, mode = 'undirected')
+  g = graph_from_adjacency_matrix(abs(wcor_exp[,,cell_type]) > cor_cutoff, mode = 'undirected')
   V(g)$color = gene_color
   eb = edgebundle(g)
   print(eb)
