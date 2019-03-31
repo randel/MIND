@@ -1,9 +1,9 @@
 MIND (Multi-measure INdividual Deconvolution)
 =====
 
-### Using Multiple Measurements of Tissue to Estimate Individual- And Cell-Type-Specific Gene Expression via Deconvolution
+### Using Multiple Measurements of Tissue to Estimate Subject- And Cell-Type-Specific Gene Expression via Deconvolution
 
-A method to glean more insights from bulk gene expression. It borrows information across multiple measurements of the same tissue per individual, such as multiple regions of the brain, using an empirical Bayes approach to estimate individual- and cell-type-specific gene expression via deconvolution.
+A method to glean more insights from bulk gene expression. It borrows information across multiple measurements of the same tissue per subject, such as multiple regions of the brain, using an empirical Bayes approach to estimate subject- and cell-type-specific gene expression via deconvolution.
 
 ### Installation
 
@@ -19,10 +19,7 @@ library(MIND)
 data(example)
 
 deconv = mind(X = example$X, W = example$W)
-# deconv$alpha # deconvolved individual- and cell-type-specific gene expression
-
-# downstream analysis: cell-type-specific network
-get_network(alpha = deconv$alpha, W = example$W, cell_type = 3, cor_cutoff = 0.7)
+# deconv$A # deconvolved subject- and cell-type-specific gene expression
 ```
 
 For details, please see the [PDF manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).
@@ -31,4 +28,4 @@ The cell type fraction can be pre-estimated using standard deconvolution method 
 
 
 ### Reference
-Jiebiao Wang, Bernie Devlin, Kathryn Roeder. Using multiple measurements of tissue to estimate individual- and cell-type-specific gene expression via deconvolution. bioRxiv 379099; doi: https://doi.org/10.1101/379099
+Jiebiao Wang, Bernie Devlin, Kathryn Roeder. Using multiple measurements of tissue to estimate subject- and cell-type-specific gene expression. bioRxiv 379099; doi: https://doi.org/10.1101/379099

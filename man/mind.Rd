@@ -4,41 +4,42 @@
 \alias{mind}
 \title{The Multi-measure INdividual Deconvolution (MIND) algorithm}
 \usage{
-mind(X, W, maxIter = 100, tol = 0.001, verbose = F)
+mind(X, W, maxIter = 100, tol = 0.001, verbose = F, ncore = 4)
 }
 \arguments{
-\item{X}{bulk gene expression (gene x individual x measure).}
+\item{X}{bulk gene expression (gene x subject x measure).}
 
-\item{W}{subject-specific cell type fraction (individual x measure x cell type).}
+\item{W}{subject-specific cell type fraction (subject x measure x cell type).}
 
 \item{maxIter}{maximum number of iterations for the EM algorithm.}
 
 \item{tol}{tolerance level of absolute relative change of the log-likelihood to stop the EM algorithm.}
 
-\item{verbose}{logical, to print the detailed information for each iteration: iter (the iteration number), logLike_change, sigma2_e, Sigma_c.}
+\item{verbose}{logical, to print the detailed information for each iteration: iter (the iteration number), logLike_change, sigma2_e, mean(diag(Sigma_c))).}
+
+\item{ncore}{number of cores to run in parallel}
 }
 \value{
 A list containing the output of the EM deconvolution algorithm
-\item{alpha}{the deconvolved cell-type-specific gene expression (gene x cell type x individual).}
+\item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x subject).}
+\item{mu}{the estimated profile matrix (gene x cell type).}
 \item{iter}{the number of iterations used in the EM algorithm.}
 \item{Sigma_c}{the covariance matrix for the deconvolved cell-type-specific expression (cell type x cell type).}
 \item{sigma2_e}{the error variance.}
-\item{loglikelihood}{the log-likelihood for each EM iterations.}
+\item{loglike}{the log-likelihood for each EM iteration.}
+\item{var_A}{the posterior covariance matrix for A (vectorized covariance matrix by subject).}
 }
 \description{
-It calculates the empirical Bayes estimates of cell-type-specific gene expression, per individual, via a computationally efficient EM algorithm.
+It calculates the empirical Bayes estimates of subject- and cell-type-specific gene expression, via a computationally efficient EM algorithm.
 }
 \examples{
 
 data(example)
 
-deconv = mind(X = example$X, W = example$W)
-
-get_network(alpha = deconv$alpha, W = example$W, cell_type = 3, cor_cutoff = 0.7)
-
+deconv = mind(X = example$X, W = example$W, ncore = 2)
 
 }
 \references{
-Wang, Jiebiao, Bernie Devlin, Kathryn Roeder.
-Using multiple measurements of tissue to estimate individual- and cell-type-specific gene expression via deconvolution. Submitted.
+Jiebiao Wang, Bernie Devlin, Kathryn Roeder.
+Using multiple measurements of tissue to estimate subject- and cell-type-specific gene expression. Submitted.
 }

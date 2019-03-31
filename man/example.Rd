@@ -6,8 +6,8 @@
 \title{A data example}
 \value{
 A list containing
-\item{X}{bulk gene expression (gene x individual x measure).}
-\item{W}{subject-specific cell type fraction (individual x measure x cell type).}
+\item{X}{bulk gene expression (gene x subject x measure).}
+\item{W}{subject-specific cell type fraction (subject x measure x cell type).}
 }
 \description{
 A data list for demonstration.
