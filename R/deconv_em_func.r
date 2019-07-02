@@ -237,7 +237,7 @@ est_frac = function(sig, bulk) {
   nls <- apply(bulk, 2, function(b) nnls(sig, b)$x)
   nls = t(apply(nls, 2, function(x) x/sum(x)))
   colnames(nls) = colnames(sig)
-  rownames(nls) = rownames(bulk)
+  rownames(nls) = colnames(bulk)
   print(round(colMeans(nls), 2))
   return(nls)
 }
