@@ -40,8 +40,7 @@ For details, please see the [PDF
 manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).
 
 The cell type fraction can be pre-estimated using `est_frac()` (based on
-non-negative least squares) or another standard deconvolution method
-(e.g., [CIBERSORT](https://cibersort.stanford.edu)). It requires a
+non-negative least squares, see an example [here](https://github.com/randel/MIND/blob/master/man/est_frac_help.html)) or another standard deconvolution method. It requires a
 signature matrix derived from reference samples of single-cell RNA-seq
 data.
 
