@@ -48,4 +48,4 @@ data.
 
 Jiebiao Wang, Bernie Devlin, Kathryn Roeder. Using multiple measurements
 of tissue to estimate subject- and cell-type-specific gene expression.
-bioRxiv 379099; doi: <https://doi.org/10.1101/379099>
+*Bioinformatics*, https://doi.org/10.1093/bioinformatics/btz619
