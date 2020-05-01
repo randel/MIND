@@ -12,10 +12,10 @@ bmind = function(X, W, id, ncore = 30, profile = NULL, covariance = NULL, nu = 5
   getDoParWorkers()
   
   K = ncol(W)
-  if(is.null(V_fe)) V_fe = diag(.5, ncol(profile))
-  colnames(W) = gsub(' ', '.', colnames(W))
   
   if(is.null(profile)) profile = matrix(1, nrow(X), K) * apply(X, 1, mean)
+  if(is.null(V_fe)) V_fe = diag(.5, ncol(profile))
+  colnames(W) = gsub(' ', '.', colnames(W))
   
   if(is.null(covariance)) {
     covariance = array(NA, dim = c(nrow(X), K, K))
