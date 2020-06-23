@@ -18,8 +18,8 @@
 #' \item{loglike}{the log-likelihood for each EM iteration.}
 #' \item{var_A}{the posterior covariance matrix for A (vectorized covariance matrix by subject).}
 #'
-#' @references Jiebiao Wang, Bernie Devlin, Kathryn Roeder.
-#' Using multiple measurements of tissue to estimate subject- and cell-type-specific gene expression. Submitted.
+#' @references Wang, Jiebiao, Bernie Devlin, and Kathryn Roeder. "Using multiple measurements of tissue to estimate subject-and cell-type-specific gene 
+#' expression." Bioinformatics 36.3 (2020): 782-788. https://doi.org/10.1093/bioinformatics/btz619
 #'
 #' @examples
 #'
@@ -221,19 +221,22 @@ get_A = function(X, W, deconv) {
 
 
 
-#' Estimating cell type fractions using non-negative least squares (NNLS)
+#' Estimating cell type fractions with a signature matrix using non-negative least squares (NNLS)
 #'
-#' It calls the nnls package to estimate cell type fractions using a signature matrix and bulk expression data.
+#' It calls the nnls package to estimate cell type fractions of bulk data using a pre-estimated signature matrix. It is recommended to 
+#' keep the row and column names of the input data.
 #'
 #' @param sig signature matrix (marker gene x cell type).
-#' @param bulk bulk gene expression data that need to be deconvolved (gene x tissue sample).
+#' @param bulk bulk data that need to be deconvolved (gene x tissue sample).
 #'
-#' @return A matrix containing the estimated cell type fractions (tissue sample x cell type). Row sums have been normalized to be 1.
+#' @return A matrix containing the estimated cell type fractions (tissue sample x cell type). Row sums have been normalized to be 1 per sample.
 #'
 #' @export est_frac
 
-est_frac = function(sig, bulk) {
-  package.check('nnls')
+est_frac = function (sig, bulk) {
+  sig = as.matrix(sig)
+  bulk = as.matrix(bulk[rownames(sig),])
+  package.check("nnls")
   nls <- apply(bulk, 2, function(b) nnls(sig, b)$x)
   nls = t(apply(nls, 2, function(x) x/sum(x)))
   colnames(nls) = colnames(sig)
@@ -241,6 +244,7 @@ est_frac = function(sig, bulk) {
   print(round(colMeans(nls), 2))
   return(nls)
 }
+
 
 
 # use this function to check if each package is on the local machine
