@@ -1,13 +1,100 @@
-
-# bmind for 2-dimensional data: X (gene x sample), W (sample x cell)
-# id: sample subject ID (note that the subject ID will be sorted in the output); 
-# different subject ID order would produce slightly diff results
-
-bmind = function(X, W, id, ncore = 30, profile = NULL, covariance = NULL, nu = 50, nitt = 1300, burnin = 300, thin = 1, V_fe = NULL, 
-                 pmedian = F) {
+#' The bMIND algorithm to estimate sample-level cell-type-specific expression and conduct CTS differential expression (DE) analysis
+#'
+#' It calculates the Bayesian estimates of sample- and cell-type-specific (CTS) gene expression, via MCMC. For all input, dim names are recommended if applicable.
+#'
+#' @param bulk bulk gene expression (gene x sample). We recommend log2-transformed data for better performance, except when using Bisque to estimate 
+#' cell type fractions, raw count is expected for Bisque. If the max(bulk) > 50, bulk will be transformed to log2(count per million + 1) 
+#' before running bMIND.
+#' @param frac sample-specific cell type fraction (sample x cell type). If not specified (NULL), it will be estimated by non-negative least squares (NNLS) by 
+#' providing signature matrix or Bisque by providing single-cell reference.
+#' @param frac_method method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
+#' @param sc_count sc/snRNA-seq raw count as reference for Bisque to estimate cell type fractions.
+#' @param sc_meta meta data frame for sc/snRNA-seq reference. A binary (0-1) column of 'case' is expected to indicate case/control status.
+#' @param signature signature matrix for NNLS to estimate cell type fractions. Log2 transformation is recommended.
+#' @param signature_case signature matrix from case samples for NNLS to estimate cell type fractions. Log2 transformation is recommended. If this is 
+#' provided, signature will be treated as signature matrix for unaffected controls.
+#' @param case_bulk case/control status vector for bulk data when using case/control reference to estimate the cell type fractions for case/control subjects
+#' separately.
+#' @param sample_id sample/subject ID vector. The default is that sample ID will be automatically provided for sample-level bMIND analysis, otherwise 
+#' subject ID should be provided for subject-level bMIND analysis. Note that the subject ID will be sorted in the output and different sample_id would 
+#' produce slightly different results in MCMCglmm.
+#' @param ncore number of cores to run in parallel for providing sample/subject-level CTS estimates. The default is all available cores.
+#' @param profile prior profile matrix (gene by cell type). Gene names should be in the same order of bulk, and cell type names should be in the same order
+#' as frac. If not specified (NULL), the bulk mean will be supplied.
+#' @param covariance prior covariance array (gene by cell type by cell type). Gene names should be in the same order of bulk, and cell type names should be 
+#' in the same order as frac. If not specified (NULL), bulk variance / sum(colMeans(frac)^2) will be supplied.
+#' @param nu hyper-parameter for the prior covariance matrix. The larger the nu, the higher the certainty about the information in covariance, and the more 
+#' informative is the distribution. The default is 50.
+#' @param V_fe hyper-parameter for the covariance matrix of fixed-effects. The default is 0.5 * Identity matrix.
+#' @param nitt number of MCMC iterations.
+#' @param thin thinning interval for MCMC.
+#' @param burnin burn-in iterations for MCMC.
+#' @param y binary (0-1) outcome/phenotype vector for CTS DE analysis. It can also be a factor with two levels. Should be the same 
+#' length and order as sample_id or sort(unique(sample_id)) and row names of covariate.
+#' @param covariate matrix for covariates to be adjusted in CTS differential testing.
+#' 
+#' @return A list containing the output of the bMIND algorithm (some genes with error message in MCMCglmm will not be outputted, 
+#' e.g., with constant expression)
+#' \item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x sample).}
+#' \item{Sigma_c}{the covariance matrix for the deconvolved cell-type-specific expression (gene x cell type x cell type).}
+#' \item{mu}{the estimated profile matrix (gene x cell type).}
+#' \item{frac}{the estimated cell type fractions (sample x cell type).}
+#' \item{pval}{the p-values of CTS-DE testing (cell type x gene).}
+#' \item{qval}{the q-values of CTS-DE testing by MANOVA and BH FDR adjustment (cell type x gene).}
+#'
+#' @references Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of subject- and cell-type-specific gene expression from a single 
+#' tissue sample per subject." Submitted (2020).
+#'
+#' @examples
+#'
+#' data(example)
+#' bulk = t(na.omit(apply(example$X, 1, as.vector)))
+#' frac = na.omit(apply(example$W, 3, as.vector))
+#' colnames(bulk) = rownames(frac) = 1:nrow(frac)
+#'
+#'# with provided cell type fractions
+#' deconv1 = bMIND(bulk, frac = frac, y = rbinom(n = nrow(frac), size = 1, prob = .5), ncore = 2)
+#' 
+#' set.seed(1)
+#' data(signature)
+#' bulk = matrix(rnorm(300*ncol(bulk), 10), ncol = ncol(bulk))
+#' rownames(bulk) = rownames(signature)[1:nrow(bulk)]
+#' colnames(bulk) = 1:ncol(bulk)
+#' 
+#' # without provided cell type fractions
+#' deconv2 = bMIND(bulk, signature = signature[,-6], y = rbinom(n = nrow(frac), size = 1, prob = .5), 
+#' ncore = 2)
+#'
+#' @export bMIND
+#' 
+bMIND = function(bulk, frac = NULL, frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL,
+                 sample_id = NULL, ncore = NULL, profile = NULL, covariance = NULL, nu = 50, V_fe = NULL, nitt = 1300, burnin = 300, thin = 1, 
+                 y = NULL, covariate = NULL) {
   
-  library(doParallel)
-  cl <- makeCluster(ncore)
+  # check if bulk has genes with constant expression, exclude them, together with those genes in profile and covariance
+  
+  # estimate cell type fractions
+  if(is.null(frac)) est_frac = TRUE else est_frac = FALSE
+  if(est_frac) frac = est_frac_sc(bulk, sc_count, signature, signature_case, frac_method, case_bulk, sc_meta)
+  
+  if(is.null(ncore)) ncore = detectCores()
+  if(is.null(sample_id)) sample_id = rownames(frac)
+  if(max(bulk) > 50) bulk = log2(apply(bulk, 2, function(x) x/sum(x)*1e6) + 1)
+  cts_est = bmind(bulk, frac, sample_id, ncore, profile, covariance, nu, nitt, burnin, thin, V_fe)
+  if(est_frac) cts_est$frac = frac
+  
+  if(is.null(y)) return(cts_est) else {
+    bmind_test = test(cts_est$A, y, covariate)
+    return(list(c(cts_est, bmind_test)))
+  }
+  
+}
+
+# bmind with input of 2-dimensional data: X (gene x sample), W (sample x cell type); sample should be in the same order
+
+bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL, nu = 50, nitt = 1300, burnin = 300, thin = 1, V_fe = NULL) {
+  
+  cl = makeCluster(ncore)
   registerDoParallel(cl)
   getDoParWorkers()
   
@@ -31,16 +118,12 @@ bmind = function(X, W, id, ncore = 30, profile = NULL, covariance = NULL, nu = 5
   if(any(rownames(X) != rownames(profile)) | any(rownames(profile) != rownames(covariance))) 
     print(('Warning: check gene names of bulk data and prior'))
   if(any(colnames(W) != colnames(profile)) | any(colnames(profile) != colnames(covariance))) 
-    print(('Warning: check cell names of fraction and prior'))
+    print(('Warning: check cell type names of fraction and prior'))
   
-  library(foreach)
-  mind_mc_ls <- foreach(i = rownames(X), .errorhandling = 'pass') %dopar% {
+  mind_mc_ls = foreach(i = rownames(X), .errorhandling = 'pass') %dopar% {
     
-    source('https://raw.githubusercontent.com/randel/MIND/master/R/bmind_func.r')
-    
-    return(lme_mc2(x = X[i,], W = W, id, mu = profile[i,], V_fe = V_fe, V_re = covariance[i,,], nu = nu, nitt = nitt, burnin = burnin, 
-                   thin = thin,
-                   pmedian = pmedian))
+    return(lme_mc2(x = X[i,], W = W, sample_id, mu = profile[i,], V_fe = V_fe, V_re = covariance[i,,], nu = nu, nitt = nitt, burnin = burnin, 
+                   thin = thin))
   }
   names(mind_mc_ls) = rownames(X)
   nerr_id = which(sapply(mind_mc_ls, length) != 2)
@@ -51,56 +134,56 @@ bmind = function(X, W, id, ncore = 30, profile = NULL, covariance = NULL, nu = 5
   }
   res = allto1(mind_mc_ls[nerr_id])
   # rownames(res$A) = rownames(X)[nerr_id]
-  # dimnames(res$A)[[3]] = unique(id)
+  # dimnames(res$A)[[3]] = unique(sample_id)
   # colnames(res$A) = colnames(res$mu) = colnames(W)
   # res$lme = mind_mc_ls[[1]]$lme
   res$A[res$A < min(X)] = min(X)
   res$A[res$A > max(X)] = max(X)
   
-  if(nrow(W) == length(id)) res$A = res$A[,,rownames(W)]
+  if(nrow(W) == length(sample_id)) res$A = res$A[,,rownames(W)]
   
+  stopCluster(cl)
   return(res)
 }
 
 
 # for one gene for 2D data
-lme_mc2 = function(x, W, id, mu, V_fe, V_re, nu = 50, nitt = 1300, burnin = 300, thin = 1, pmedian) {
+lme_mc2 = function(x, W, sample_id, mu, V_fe, V_re, nu = 50, nitt = 1300, burnin = 300, thin = 1) {
   
   K = ncol(W)
   
   # if(is.null(colnames(W))) cell = paste0('cell', 1:K) else 
   cell = colnames(W)
-  random = as.formula(paste('~us(', paste(cell, collapse = '+'), '):id'))
+  random = as.formula(paste('~us(', paste(cell, collapse = '+'), '):sample_id'))
   
   miss = which(is.na(x))
   if(length(miss) > 0) {
     x = x[-miss]
     W = W[-miss,]
-    id = id[-miss]
+    sample_id = sample_id[-miss]
   }
   
-  library(MCMCglmm)
   set.seed(1)
   fe_formula = as.formula(paste('x ~ -1 + ', paste(cell, collapse = '+')))
-  lme2 <- MCMCglmm(fe_formula, random, data = data.frame(W, id, x), 
-                   verbose = F, pr = T, prior = list(B = list(mu = mu, V = V_fe), 
-                                                     G = list(G1 = list(nu = nu, V = V_re))), 
-                   nitt = nitt, burnin = burnin, thin = thin) # check the order of subjects' output
+  lme2 = MCMCglmm(fe_formula, random, data = data.frame(W, sample_id, x), 
+                  verbose = F, pr = T, prior = list(B = list(mu = mu, V = V_fe), 
+                                                    G = list(G1 = list(nu = nu, V = V_re))), 
+                  nitt = nitt, burnin = burnin, thin = thin) # check the order of subjects' output
   
-  N = length(unique(id))
+  N = length(unique(sample_id))
   
   # RE: subject x cell
-  if(pmedian) re2 = matrix(apply(lme2$Sol, 2, median)[-(1:K)], ncol = K) else re2 = matrix(colMeans(lme2$Sol)[-(1:K)], ncol = K)
+  re2 = matrix(colMeans(lme2$Sol)[-(1:K)], ncol = K)
   rownames(re2) = sapply(matrix(colnames(lme2$Sol)[-(1:K)], ncol = K)[,1], function(x) unlist(strsplit(x, '[.]'))[3])
   colnames(re2) = cell
   
-  if(pmedian) mu = apply(lme2$Sol, 2, median)[1:K] else mu = colMeans(lme2$Sol)[1:K]
+  mu = colMeans(lme2$Sol)[1:K]
   names(mu) = cell
   
   # Sigma_c
-  if(pmedian) D2 = matrix(apply(lme2$VCV, 2, median)[-ncol(lme2$VCV)], K, K) else D2 = matrix(colMeans(lme2$VCV)[-ncol(lme2$VCV)], K, K)
+  D2 = matrix(colMeans(lme2$VCV)[-ncol(lme2$VCV)], K, K)
   
-  if(pmedian) sigma2_e = apply(lme2$VCV, 2, median)[ncol(lme2$VCV)] else sigma2_e = colMeans(lme2$VCV)[ncol(lme2$VCV)]
+  sigma2_e = colMeans(lme2$VCV)[ncol(lme2$VCV)]
   rownames(D2) = colnames(D2) = cell
   
   return(list(A = t(re2) + mu, sigma2_e = sigma2_e, Sigma_c = D2, mu = mu)) # , lme = lme2
@@ -128,66 +211,52 @@ allto1 = function(mind1) {
 }
 
 
-est_frac_sc = function(bulk, sc = NULL, sig = NULL, sig_case = NULL, method, case_bulk = NULL, sc_meta = NULL, marker = NULL) {
+est_frac_sc = function(bulk, sc_count = NULL, signature = NULL, signature_case = NULL, frac_method, case_bulk = NULL, sc_meta = NULL) {
   
-  # NN LS
-  if(method == 'NNLS') {
-    if(is.null(sig_case)) frac = est_frac(sig, bulk) else {
-      frac0 = est_frac(sig, bulk[, case_bulk == 0])
-      frac1 = est_frac(sig_case, bulk[, case_bulk == 1])
+  if(!is.null(signature)) {
+    frac_method = 'NNLS'
+    signature = signature[rownames(signature) %in% rownames(bulk),]
+  }
+  
+  # NNLS
+  if(frac_method == 'NNLS') {
+    
+    if(max(bulk) > 50) bulk = log2(apply(bulk, 2, function(x) x/sum(x)*1e6) + 1)
+    if(max(signature) > 50) signature = log2(signature + 1)
+    
+    if(is.null(signature_case)) frac = est_frac(signature, bulk) else {
+      if(max(signature_case) > 50) signature_case = log2(signature_case + 1)
+      
+      frac0 = est_frac(signature, bulk[, case_bulk == 0])
+      frac1 = est_frac(signature_case, bulk[, case_bulk == 1])
       frac = rbind(frac0, frac1)[colnames(bulk),]
     }
   }
   
   # Bisque
-  if(method == 'Bisque') {
+  if(frac_method == 'Bisque') {
     
     package.check("BisqueRNA")
     package.check("Biobase")
-    bulk_eset <- ExpressionSet(assayData = bulk)
-    # using only markers? no, all genes (Expects read counts for both datasets, as they will be converted to counts per million (CPM))
-    sc_eset <- ExpressionSet(assayData = as.matrix(sc), 
-                             phenoData = methods::new("AnnotatedDataFrame", data = sc_meta, 
-                                                      varMetadata = data.frame(labelDescription = colnames(sc_meta), 
-                                                                               row.names = colnames(sc_meta))))
+    bulk_eset = ExpressionSet(assayData = bulk)
+    # (Expects read counts for both datasets, as they will be converted to counts per million (CPM))
+    sc_eset = ExpressionSet(assayData = as.matrix(sc_count), 
+                            phenoData = methods::new("AnnotatedDataFrame", data = sc_meta, 
+                                                     varMetadata = data.frame(labelDescription = colnames(sc_meta), 
+                                                                              row.names = colnames(sc_meta))))
     
-    if(is.null(sc_meta$case)) frac = t(ReferenceBasedDecomposition(bulk_eset, sc_eset, markers = marker, cell.types = 'cell_type',
+    if(is.null(sc_meta$case)) frac = t(ReferenceBasedDecomposition(bulk_eset, sc_eset, cell.types = 'cell_type',
                                                                    subject.names = 'subject', use.overlap = F)$bulk.props) 
     if(!is.null(sc_meta$case)) {
-      frac0 = t(ReferenceBasedDecomposition(bulk_eset[, case_bulk == 0], sc_eset[, sc_meta$case == 0], markers = marker, 
+      frac0 = t(ReferenceBasedDecomposition(bulk_eset[, case_bulk == 0], sc_eset[, sc_meta$case == 0], 
                                             cell.types = 'cell_type', subject.names = 'subject', use.overlap = F)$bulk.props)
-      frac1 = t(ReferenceBasedDecomposition(bulk_eset[, case_bulk == 1], sc_eset[, sc_meta$case == 1], markers = marker, 
+      frac1 = t(ReferenceBasedDecomposition(bulk_eset[, case_bulk == 1], sc_eset[, sc_meta$case == 1], 
                                             cell.types = 'cell_type', subject.names = 'subject', use.overlap = F)$bulk.props)
       frac = rbind(frac0, frac1)[colnames(bulk),]
     }
   }
   
   return(frac)
-}
-
-
-# NNLS
-est_frac = function (sig, bulk) {
-  sig = as.matrix(sig)
-  bulk = as.matrix(bulk[rownames(sig),])
-  package.check("nnls")
-  nls <- apply(bulk, 2, function(b) nnls(sig, b)$x)
-  nls = t(apply(nls, 2, function(x) x/sum(x)))
-  colnames(nls) = colnames(sig)
-  rownames(nls) = colnames(bulk)
-  print(round(colMeans(nls), 2))
-  return(nls)
-}
-
-
-# use this function to check if each package is on the local machine
-# if a package is installed, it will be loaded
-# if any are not, the missing package(s) will be installed and loaded
-package.check <- function(x) {
-  if (!require(x, character.only = TRUE)) {
-    install.packages(x, dependencies = TRUE)
-    library(x, character.only = TRUE)
-  }
 }
 
 
@@ -208,6 +277,8 @@ meta_sample2sub = function(meta_sample, sub_id) {
   return(meta_sub)
 }
 
+
+# pval for one gene in case some cell types have missing pval
 get_pval = function(pval, cell_type, K) {
   pval0 = rep(NA, K)
   names(pval0) = cell_type
@@ -216,7 +287,14 @@ get_pval = function(pval, cell_type, K) {
   return(pval0)
 }
 
+
 test = function(A, y, covariate = NULL) {
+  
+  if(dim(A)[3] != length(y)) print('CTS estimates and y have different length')
+  if(!is.null(covariate)) if(dim(A)[3] != nrow(covariate)) print('CTS estimates and covariate have different number of samples/subjects') else {
+    if(!is.null(rownames(covariate)) & any(rownames(covariate) != dimnames(A)[[3]])) covariate = covariate[dimnames(A)[[3]],]
+  }
+  
   K = ncol(A)
   cell_type = colnames(A)
   if(is.null(covariate)) pval = apply(A, 1, function(x) {
@@ -232,6 +310,7 @@ test = function(A, y, covariate = NULL) {
   # rownames(qval) = rownames(pval) = substring(rownames(pval), 5)
   return(list(qval = qval, pval = pval))
 }
+
 
 # MANOVA; pval: K x ngene
 pval2qval = function(pval, A, y, covariate = NULL) {

@@ -1,13 +1,10 @@
-MIND (Multi-measure INdividual Deconvolution)
-================
+Estimating sample/subject-level cell-type-specific gene expression
+===============================================================
 
-## Using Multiple Measurements of Tissue to Estimate Subject- And Cell-Type-Specific Gene Expression
+## bMIND: Bayesian estimation of sample- and cell-type-specific gene expression for each tissue sample
+![](man/bMIND.png)
 
-`MIND` is a method to glean insights from bulk gene expression. It
-borrows information across multiple measurements of the same tissue per
-subject, such as multiple regions of the brain, using an empirical Bayes
-approach to estimate subject- and cell-type-specific gene expression via
-deconvolution.
+`bMIND` is a Bayesian deconvolution method to integrate bulk and scRNA-seq data. With a prior derived from scRNA-seq data, we estimate sample-level cell-type-specific (CTS) expression from bulk tissue expression via MCMC.
 
 ## Installation
 
@@ -16,6 +13,40 @@ Installation requires the `devtools` package.
 ``` r
 devtools::install_github('randel/MIND')
 ```
+## Example
+
+<!-- end list -->
+
+``` r
+library(MIND)
+
+data(example)
+data(signature)
+
+set.seed(1)
+bulk = matrix(rnorm(300*ncol(bulk), 10), ncol = ncol(bulk))
+rownames(bulk) = rownames(signature)[1:nrow(bulk)]
+colnames(bulk) = 1:ncol(bulk)
+y = rbinom(n = nrow(frac), size = 1, prob = .5)
+
+deconv = bMIND(bulk, signature = signature[,-6], y = y)
+```
+
+For details, please see the [PDF
+manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).
+
+The cell type fraction can be pre-estimated using 1) non-negative least squares (NNLS), which requires a
+signature matrix derived from reference samples of single-cell RNA-seq data; 2) Bisque, which requires raw single-cell data.
+
+## Reference
+
+**bMIND**: Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of subject- and cell-type-specific gene expression from a single tissue sample per subject." *Submitted* (2020).
+
+
+
+# MIND: using multiple measurements of tissue to estimate subject-and cell-type-specific gene expression
+![](man/MIND.png)
+
 
 ## Example
 
@@ -46,6 +77,4 @@ data.
 
 ## Reference
 
-Jiebiao Wang, Bernie Devlin, Kathryn Roeder. Using multiple measurements
-of tissue to estimate subject- and cell-type-specific gene expression.
-*Bioinformatics*, https://doi.org/10.1093/bioinformatics/btz619
+**MIND**: Wang, Jiebiao, Bernie Devlin, and Kathryn Roeder. "Using multiple measurements of tissue to estimate subject-and cell-type-specific gene expression." *Bioinformatics* 36.3 (2020): 782-788. https://doi.org/10.1093/bioinformatics/btz619
