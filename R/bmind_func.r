@@ -85,7 +85,7 @@ bMIND = function(bulk, frac = NULL, frac_method = NULL, sc_count = NULL, sc_meta
   
   if(is.null(y)) return(cts_est) else {
     bmind_test = test(cts_est$A, y, covariate)
-    return(list(c(cts_est, bmind_test)))
+    return((c(cts_est, bmind_test)))
   }
   
 }

@@ -21,18 +21,18 @@ devtools::install_github('randel/MIND')
 library(MIND)
 
 data(example)
-data(signature)
+data(signature_brain_darmanis)
 
 set.seed(1)
-bulk = matrix(rnorm(300*ncol(bulk), 10), ncol = ncol(bulk))
+bulk = matrix(rnorm(300*100, 10), ncol = 100)
 rownames(bulk) = rownames(signature)[1:nrow(bulk)]
 colnames(bulk) = 1:ncol(bulk)
-y = rbinom(n = nrow(frac), size = 1, prob = .5)
+y = rbinom(n = ncol(bulk), size = 1, prob = .5)
 
 deconv = bMIND(bulk, signature = signature[,-6], y = y)
 ```
 
-For details, please see the [PDF
+For detailed tutorial, please see the [PDF
 manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).
 
 The cell type fraction can be pre-estimated using 1) non-negative least squares (NNLS), which requires a
