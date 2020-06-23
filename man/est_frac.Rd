@@ -2,18 +2,19 @@
 % Please edit documentation in R/deconv_em_func.r
 \name{est_frac}
 \alias{est_frac}
-\title{Estimating cell type fractions using non-negative least squares (NNLS)}
+\title{Estimating cell type fractions with a signature matrix using non-negative least squares (NNLS)}
 \usage{
 est_frac(sig, bulk)
 }
 \arguments{
 \item{sig}{signature matrix (marker gene x cell type).}
 
-\item{bulk}{bulk gene expression data that need to be deconvolved (gene x tissue sample).}
+\item{bulk}{bulk data that need to be deconvolved (gene x tissue sample).}
 }
 \value{
-A matrix containing the estimated cell type fractions (tissue sample x cell type). Row sums have been normalized to be 1.
+A matrix containing the estimated cell type fractions (tissue sample x cell type). Row sums have been normalized to be 1 per sample.
 }
 \description{
-It calls the nnls package to estimate cell type fractions using a signature matrix and bulk expression data.
+It calls the nnls package to estimate cell type fractions of bulk data using a pre-estimated signature matrix. It is recommended to 
+keep the row and column names of the input data.
 }

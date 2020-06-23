@@ -40,6 +40,6 @@ deconv = mind(X = example$X, W = example$W, ncore = 2)
 
 }
 \references{
-Jiebiao Wang, Bernie Devlin, Kathryn Roeder.
-Using multiple measurements of tissue to estimate subject- and cell-type-specific gene expression. Submitted.
+Wang, Jiebiao, Bernie Devlin, and Kathryn Roeder. "Using multiple measurements of tissue to estimate subject-and cell-type-specific gene 
+expression." Bioinformatics 36.3 (2020): 782-788. https://doi.org/10.1093/bioinformatics/btz619
 }
