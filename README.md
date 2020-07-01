@@ -1,7 +1,7 @@
 Estimating sample/subject-level cell-type-specific gene expression
 ===============================================================
 
-## bMIND: Bayesian estimation of sample- and cell-type-specific gene expression for each tissue sample
+## bMIND: Bayesian estimation of cell-type-specific gene expression for each tissue sample
 ![](man/bMIND.png)
 
 `bMIND` is a Bayesian deconvolution method to integrate bulk and scRNA-seq data. With a prior derived from scRNA-seq data, we estimate sample-level cell-type-specific (CTS) expression from bulk tissue expression via MCMC.
