@@ -40,7 +40,7 @@ signature matrix derived from reference samples of single-cell RNA-seq data; 2) 
 
 ## Reference
 
-**bMIND**: Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of subject- and cell-type-specific gene expression from a single tissue sample per subject." *Submitted* (2020).
+**bMIND**: Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of sample- and cell-type-specific gene expression, illustrated by differential expression analysis." *Submitted* (2020).
 
 
 
