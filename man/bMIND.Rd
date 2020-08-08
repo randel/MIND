@@ -112,6 +112,6 @@ deconv2 = bMIND(bulk, signature = signature[, -6], y = rbinom(n = nrow(frac), si
 
 }
 \references{
-Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of subject- and cell-type-specific gene expression from a single 
-tissue sample per subject." Submitted (2020).
+Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior derived from single-cell data." 
+bioRxiv (2020).
 }

@@ -42,8 +42,8 @@
 #' \item{pval}{the p-values of CTS-DE testing (cell type x gene).}
 #' \item{qval}{the q-values of CTS-DE testing by MANOVA and BH FDR adjustment (cell type x gene).}
 #'
-#' @references Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of subject- and cell-type-specific gene expression from a single 
-#' tissue sample per subject." Submitted (2020).
+#' @references Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior derived from single-cell data." 
+#' bioRxiv (2020).
 #'
 #' @examples
 #'
@@ -140,7 +140,7 @@ bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL,
   res$A[res$A < min(X)] = min(X)
   res$A[res$A > max(X)] = max(X)
   
-  if(nrow(W) == length(sample_id)) res$A = res$A[,,rownames(W)]
+  if(nrow(W) == length(sample_id)) res$A = res$A[,,unique(sample_id)]
   
   stopCluster(cl)
   return(res)
