@@ -202,11 +202,12 @@ allto1 = function(mind1) {
   
   mu = t(sapply(mind1, function(x) x$mu))
   
-  deconv1_A = SE = array(NA, dim = c(P, nrow(mind1[[1]]$A), N))
+  deconv1_A = array(NA, dim = c(P, nrow(mind1[[1]]$A), N))
   deconv1_cov = array(NA, dim = c(P, K, K))
   rownames(deconv1_A) = rownames(deconv1_cov) = rownames(mu) = names(mind1)
   colnames(deconv1_A) = colnames(deconv1_cov) = dimnames(deconv1_cov)[[3]] = rownames(mind1[[1]]$A)
   dimnames(deconv1_A)[[3]] = colnames(mind1[[1]]$A)
+  SE = deconv1_A
   for(i in names(mind1)) {
     deconv1_A[i,,] = mind1[[i]]$A
     SE[i,,] = mind1[[i]]$se
