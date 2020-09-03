@@ -121,7 +121,6 @@ bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL,
     print(('Warning: check cell type names of fraction and prior'))
   
   mind_mc_ls = foreach(i = rownames(X), .errorhandling = 'pass') %dopar% {
-    
     return(lme_mc2(x = X[i,], W = W, sample_id, mu = profile[i,], V_fe = V_fe, V_re = covariance[i,,], nu = nu, nitt = nitt, burnin = burnin, 
                    thin = thin))
   }
@@ -186,7 +185,12 @@ lme_mc2 = function(x, W, sample_id, mu, V_fe, V_re, nu = 50, nitt = 1300, burnin
   sigma2_e = colMeans(lme2$VCV)[ncol(lme2$VCV)]
   rownames(D2) = colnames(D2) = cell
   
-  return(list(A = t(re2) + mu, sigma2_e = sigma2_e, Sigma_c = D2, mu = mu)) # , lme = lme2
+  # 3d array for CTS estimates: sample x cell x Bayesian iterations
+  cts_est1 = array(NA, dim = c(N, K, nitt - burnin))
+  for(k in 1:K) cts_est1[,k,] = t(lme2$Sol[,k] + lme2$Sol[,K+N*(k-1)+(1:N)])
+  se = apply(cts_est1, 2:1, sd) # cell x sample, as A/re2
+  
+  return(list(A = t(re2) + mu, sigma2_e = sigma2_e, Sigma_c = D2, mu = mu, se = se)) # , lme = lme2
 }
 
 
@@ -198,16 +202,17 @@ allto1 = function(mind1) {
   
   mu = t(sapply(mind1, function(x) x$mu))
   
-  deconv1_A = array(NA, dim = c(P, nrow(mind1[[1]]$A), N))
+  deconv1_A = SE = array(NA, dim = c(P, nrow(mind1[[1]]$A), N))
   deconv1_cov = array(NA, dim = c(P, K, K))
   rownames(deconv1_A) = rownames(deconv1_cov) = rownames(mu) = names(mind1)
   colnames(deconv1_A) = colnames(deconv1_cov) = dimnames(deconv1_cov)[[3]] = rownames(mind1[[1]]$A)
   dimnames(deconv1_A)[[3]] = colnames(mind1[[1]]$A)
   for(i in names(mind1)) {
     deconv1_A[i,,] = mind1[[i]]$A
+    SE[i,,] = mind1[[i]]$se
     deconv1_cov[i,,] = mind1[[i]]$Sigma_c
   }
-  return(list(A = deconv1_A, Sigma_c = deconv1_cov, mu = mu))
+  return(list(A = deconv1_A, Sigma_c = deconv1_cov, mu = mu, SE = SE))
 }
 
 
