@@ -338,53 +338,7 @@ pval2qval = function(pval, A, y, covariate = NULL) {
   return(qval)
 }
 
-                   
-                   #########################################################
-                   
-get_pval = function(pval, cell_type, K) {
-  pval0 = rep(NA, K)
-  names(pval0) = cell_type
-  names = intersect(names(pval), cell_type)
-  pval0[names] = pval[names]
-  return(pval0)
-}
-
-test = function(A, y, covariate = NULL) {
-  K = ncol(A)
-  cell_type = colnames(A)
-  if(is.null(covariate)) pval = apply(A, 1, function(x) {
-    pval = coef(summary(glm(y ~ ., data = data.frame(t(x)), family = 'binomial')))[,4]
-    return(get_pval(pval, cell_type, K))
-  }) else
-    pval = apply(A, 1, function(x) {
-      pval = coef(summary(glm(y ~ ., data = data.frame(t(x), covariate), family = 'binomial')))[,4]
-      return(get_pval(pval, cell_type, K))
-    })
-  
-  qval = pval2qval(pval, A, y, covariate)
-  # rownames(qval) = rownames(pval) = substring(rownames(pval), 5)
-  return(list(qval = qval, pval = pval))
-}
-
-# MANOVA; pval: K x ngene
-pval2qval = function(pval, A, y, covariate = NULL) {
-  ng = nrow(A)
-  # pval for each gene
-  if(is.null(covariate)) pval1 = sapply(1:ng, function(g) try(summary(manova(t(A[g,,]) ~ y))$stats[1, "Pr(>F)"], silent = T)) else 
-    pval1 = sapply(1:ng, function(g) try(summary(manova(t(A[g,,]) ~ y + covariate))$stats[1, "Pr(>F)"], silent = T))
-  pval = pval[,!is.na(as.numeric(pval1))]
-  pval1 = na.omit(as.numeric(pval1))
-  qval1 = p.adjust(pval1, 'fdr')
-  # hist(pval1)
-  # print(min(qval1))
-  qval = pval
-  K = ncol(A)
-  for(i in 1:ncol(pval)) {
-    qval[,i] = 1
-    if(min(pval[,i], na.rm = T) < .05/K) qval[,i][which.min(pval[,i])] = qval1[i]
-  }
-  return(qval)
-}
+                  
 
 ########################################################################## get prior CTS profile and covariance matrix from single-cell data
 ## input
