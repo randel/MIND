@@ -7,14 +7,6 @@
 #' before running bMIND.
 #' @param frac sample-specific cell type fraction (sample x cell type). If not specified (NULL), it will be estimated by non-negative least squares (NNLS) by 
 #' providing signature matrix or Bisque by providing single-cell reference.
-#' @param frac_method method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
-#' @param sc_count sc/snRNA-seq raw count as reference for Bisque to estimate cell type fractions.
-#' @param sc_meta meta data frame for sc/snRNA-seq reference. A binary (0-1) column of 'case' is expected to indicate case/control status.
-#' @param signature signature matrix for NNLS to estimate cell type fractions. Log2 transformation is recommended.
-#' @param signature_case signature matrix from case samples for NNLS to estimate cell type fractions. Log2 transformation is recommended. If this is 
-#' provided, signature will be treated as signature matrix for unaffected controls.
-#' @param case_bulk case/control status vector for bulk data when using case/control reference to estimate the cell type fractions for case/control subjects
-#' separately.
 #' @param sample_id sample/subject ID vector. The default is that sample ID will be automatically provided for sample-level bMIND analysis, otherwise 
 #' subject ID should be provided for subject-level bMIND analysis. Note that the subject ID will be sorted in the output and different sample_id would 
 #' produce slightly different results in MCMCglmm.
@@ -32,10 +24,20 @@
 #' @param y binary (0-1) outcome/phenotype vector for CTS DE analysis. It can also be a factor with two levels. Should be the same 
 #' length and order as sample_id or sort(unique(sample_id)) and row names of covariate.
 #' @param covariate matrix for covariates to be adjusted in CTS differential testing.
+#' @param frac_method method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
+#' **All arguments starting from this one will be used to estimate cell-type fractions only, if those fractions are not pre-estimated.**
+#' @param sc_count sc/snRNA-seq raw count as reference for Bisque to estimate cell type fractions.
+#' @param sc_meta meta data frame for sc/snRNA-seq reference. A binary (0-1) column of 'case' is expected to indicate case/control status.
+#' @param signature signature matrix for NNLS to estimate cell type fractions. Log2 transformation is recommended.
+#' @param signature_case signature matrix from case samples for NNLS to estimate cell type fractions. Log2 transformation is recommended. If this is 
+#' provided, signature will be treated as signature matrix for unaffected controls.
+#' @param case_bulk case/control status vector for bulk data when using case/control reference to estimate the cell type fractions for case/control subjects
+#' separately.
 #' 
 #' @return A list containing the output of the bMIND algorithm (some genes with error message in MCMCglmm will not be outputted, 
 #' e.g., with constant expression)
 #' \item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x sample).}
+#' \item{SE}{the standard error of cell-type-specific gene expression (gene x cell type x sample).}
 #' \item{Sigma_c}{the covariance matrix for the deconvolved cell-type-specific expression (gene x cell type x cell type).}
 #' \item{mu}{the estimated profile matrix (gene x cell type).}
 #' \item{frac}{the estimated cell type fractions (sample x cell type).}
@@ -67,9 +69,9 @@
 #'
 #' @export bMIND
 #' 
-bMIND = function(bulk, frac = NULL, frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL,
-                 sample_id = NULL, ncore = NULL, profile = NULL, covariance = NULL, nu = 50, V_fe = NULL, nitt = 1300, burnin = 300, thin = 1, 
-                 y = NULL, covariate = NULL) {
+bMIND = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NULL, covariance = NULL, y = NULL, covariate = NULL, 
+                 nu = 50, V_fe = NULL, nitt = 1300, burnin = 300, thin = 1, 
+                 frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
   
   # check if bulk has genes with constant expression, exclude them, together with those genes in profile and covariance
   
@@ -139,7 +141,10 @@ bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL,
   res$A[res$A < min(X)] = min(X)
   res$A[res$A > max(X)] = max(X)
   
-  if(nrow(W) == length(sample_id)) res$A = res$A[,,unique(sample_id)]
+  if(nrow(W) == length(sample_id)) {
+    res$A = res$A[,,unique(sample_id)]
+    res$SE = res$SE[,,unique(sample_id)]
+  }
   
   stopCluster(cl)
   return(res)
@@ -185,7 +190,7 @@ lme_mc2 = function(x, W, sample_id, mu, V_fe, V_re, nu = 50, nitt = 1300, burnin
   sigma2_e = colMeans(lme2$VCV)[ncol(lme2$VCV)]
   rownames(D2) = colnames(D2) = cell
   
-  # 3d array for CTS estimates: sample x cell x Bayesian iterations
+  # 3d array for CTS estimates: sample x cell x Bayesian iterations (note that sample ID will be sorted by characters)
   cts_est1 = array(NA, dim = c(N, K, nitt - burnin))
   for(k in 1:K) cts_est1[,k,] = t(lme2$Sol[,k] + lme2$Sol[,K+N*(k-1)+(1:N)])
   se = apply(cts_est1, 2:1, sd) # cell x sample, as A/re2
@@ -338,17 +343,24 @@ pval2qval = function(pval, A, y, covariate = NULL) {
   return(qval)
 }
 
+
                   
-
-########################################################################## get prior CTS profile and covariance matrix from single-cell data
-## input
-# sc: single-cell count matrix, gene x cell
-# meta_sc: data.frame for meta of cells (cell x features, including sample (ID), cell_type)
-
-## output
-# profile: CTS profile matrix (gene x cell type), in log2(CPM + 1) scale
-# cov: CTS covariance matrix (gene x cell type x cell type)
-                   
+#' get prior CTS profile and covariance matrix from single-cell data
+#'
+#' It calculates prior CTS profile and covariance matrix from single-cell data. The output can serve as hyper-parameters in bMIND.
+#'
+#' @param sc single-cell count matrix, gene x cell.
+#' @param meta_sc data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`).
+#' 
+#' @return A list containing
+#' \item{profile}{CTS profile matrix (gene x cell type), in log2(CPM + 1) scale.}
+#' \item{covariance}{CTS covariance matrix (gene x cell type x cell type).}
+#'
+#' @references Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior derived from single-cell data." 
+#' bioRxiv (2020).
+#' 
+#' @export get_prior
+#'            
 get_prior = function(sc, meta_sc) {
   
   meta_sc$sample = as.character(meta_sc$sample)
@@ -387,5 +399,5 @@ get_prior = function(sc, meta_sc) {
     profile[,i] = log2(cpm(rowMeans(sc[, meta_sc$cell_type == i])) + 1)
   }
   
-  return(list(cov = cov, ctsExp = cts, profile = profile))
+  return(list(profile = profile, covariance = cov)) # ctsExp = cts, 
 }

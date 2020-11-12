@@ -7,23 +7,23 @@
 bMIND(
   bulk,
   frac = NULL,
-  frac_method = NULL,
-  sc_count = NULL,
-  sc_meta = NULL,
-  signature = NULL,
-  signature_case = NULL,
-  case_bulk = NULL,
   sample_id = NULL,
   ncore = NULL,
   profile = NULL,
   covariance = NULL,
+  y = NULL,
+  covariate = NULL,
   nu = 50,
   V_fe = NULL,
   nitt = 1300,
   burnin = 300,
   thin = 1,
-  y = NULL,
-  covariate = NULL
+  frac_method = NULL,
+  sc_count = NULL,
+  sc_meta = NULL,
+  signature = NULL,
+  signature_case = NULL,
+  case_bulk = NULL
 )
 }
 \arguments{
@@ -33,20 +33,6 @@ before running bMIND.}
 
 \item{frac}{sample-specific cell type fraction (sample x cell type). If not specified (NULL), it will be estimated by non-negative least squares (NNLS) by 
 providing signature matrix or Bisque by providing single-cell reference.}
-
-\item{frac_method}{method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'.}
-
-\item{sc_count}{sc/snRNA-seq raw count as reference for Bisque to estimate cell type fractions.}
-
-\item{sc_meta}{meta data frame for sc/snRNA-seq reference. A binary (0-1) column of 'case' is expected to indicate case/control status.}
-
-\item{signature}{signature matrix for NNLS to estimate cell type fractions. Log2 transformation is recommended.}
-
-\item{signature_case}{signature matrix from case samples for NNLS to estimate cell type fractions. Log2 transformation is recommended. If this is 
-provided, signature will be treated as signature matrix for unaffected controls.}
-
-\item{case_bulk}{case/control status vector for bulk data when using case/control reference to estimate the cell type fractions for case/control subjects
-separately.}
 
 \item{sample_id}{sample/subject ID vector. The default is that sample ID will be automatically provided for sample-level bMIND analysis, otherwise 
 subject ID should be provided for subject-level bMIND analysis. Note that the subject ID will be sorted in the output and different sample_id would 
@@ -60,6 +46,11 @@ as frac. If not specified (NULL), the bulk mean will be supplied.}
 \item{covariance}{prior covariance array (gene by cell type by cell type). Gene names should be in the same order of bulk, and cell type names should be 
 in the same order as frac. If not specified (NULL), bulk variance / sum(colMeans(frac)^2) will be supplied.}
 
+\item{y}{binary (0-1) outcome/phenotype vector for CTS DE analysis. It can also be a factor with two levels. Should be the same 
+length and order as sample_id or sort(unique(sample_id)) and row names of covariate.}
+
+\item{covariate}{matrix for covariates to be adjusted in CTS differential testing.}
+
 \item{nu}{hyper-parameter for the prior covariance matrix. The larger the nu, the higher the certainty about the information in covariance, and the more 
 informative is the distribution. The default is 50.}
 
@@ -71,15 +62,26 @@ informative is the distribution. The default is 50.}
 
 \item{thin}{thinning interval for MCMC.}
 
-\item{y}{binary (0-1) outcome/phenotype vector for CTS DE analysis. It can also be a factor with two levels. Should be the same 
-length and order as sample_id or sort(unique(sample_id)) and row names of covariate.}
+\item{frac_method}{method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
+**All arguments starting from this one will be used to estimate cell-type fractions only, if those fractions are not pre-estimated.**}
 
-\item{covariate}{matrix for covariates to be adjusted in CTS differential testing.}
+\item{sc_count}{sc/snRNA-seq raw count as reference for Bisque to estimate cell type fractions.}
+
+\item{sc_meta}{meta data frame for sc/snRNA-seq reference. A binary (0-1) column of 'case' is expected to indicate case/control status.}
+
+\item{signature}{signature matrix for NNLS to estimate cell type fractions. Log2 transformation is recommended.}
+
+\item{signature_case}{signature matrix from case samples for NNLS to estimate cell type fractions. Log2 transformation is recommended. If this is 
+provided, signature will be treated as signature matrix for unaffected controls.}
+
+\item{case_bulk}{case/control status vector for bulk data when using case/control reference to estimate the cell type fractions for case/control subjects
+separately.}
 }
 \value{
 A list containing the output of the bMIND algorithm (some genes with error message in MCMCglmm will not be outputted, 
 e.g., with constant expression)
 \item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x sample).}
+\item{SE}{the standard error of cell-type-specific gene expression (gene x cell type x sample).}
 \item{Sigma_c}{the covariance matrix for the deconvolved cell-type-specific expression (gene x cell type x cell type).}
 \item{mu}{the estimated profile matrix (gene x cell type).}
 \item{frac}{the estimated cell type fractions (sample x cell type).}
