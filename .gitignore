@@ -1,6 +1,0 @@
-
-*.Rmd
-README_cache/gfm/__packages
-*.RData
-*.rdb
-*.rdx
