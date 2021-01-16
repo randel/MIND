@@ -21,7 +21,7 @@
 #' @param nitt number of MCMC iterations.
 #' @param thin thinning interval for MCMC.
 #' @param burnin burn-in iterations for MCMC.
-#' @param y binary (0-1) outcome/phenotype vector for CTS DE analysis. It can also be a factor with two levels. Should be the same 
+#' @param y binary (0-1) outcome/phenotype vector for CTS DE analysis (0 for controls, 1 for cases). Should be the same 
 #' length and order as sample_id or sort(unique(sample_id)) and row names of covariate.
 #' @param covariate matrix for covariates to be adjusted in CTS differential testing.
 #' @param frac_method method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
@@ -109,7 +109,6 @@ bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL,
   if(is.null(covariance)) {
     covariance = array(NA, dim = c(nrow(X), K, K))
     for(i in 1:nrow(X)) covariance[i,,] = diag(K) * var(X[i,]) / sum(colMeans(W)^2)
-    # summary(covI[1:nrow(X),1,1])
   }
   
   if(is.null(rownames(X))) rownames(X) = 1:nrow(X)
@@ -191,7 +190,7 @@ lme_mc2 = function(x, W, sample_id, mu, V_fe, V_re, nu = 50, nitt = 1300, burnin
   rownames(D2) = colnames(D2) = cell
   
   # 3d array for CTS estimates: sample x cell x Bayesian iterations (note that sample ID will be sorted by characters)
-  cts_est1 = array(NA, dim = c(N, K, nitt - burnin))
+  cts_est1 = array(NA, dim = c(N, K, (nitt - burnin)/thin))
   for(k in 1:K) cts_est1[,k,] = t(lme2$Sol[,k] + lme2$Sol[,K+N*(k-1)+(1:N)])
   se = apply(cts_est1, 2:1, sd) # cell x sample, as A/re2
   
@@ -247,12 +246,10 @@ est_frac_sc = function(bulk, sc_count = NULL, signature = NULL, signature_case =
   # Bisque
   if(frac_method == 'Bisque') {
     
-    package.check("BisqueRNA")
-    package.check("Biobase")
     bulk_eset = ExpressionSet(assayData = bulk)
     # (Expects read counts for both datasets, as they will be converted to counts per million (CPM))
     sc_eset = ExpressionSet(assayData = as.matrix(sc_count), 
-                            phenoData = methods::new("AnnotatedDataFrame", data = sc_meta, 
+                            phenoData = new("AnnotatedDataFrame", data = sc_meta, 
                                                      varMetadata = data.frame(labelDescription = colnames(sc_meta), 
                                                                               row.names = colnames(sc_meta))))
     
@@ -348,6 +345,7 @@ pval2qval = function(pval, A, y, covariate = NULL) {
 #' get prior CTS profile and covariance matrix from single-cell data
 #'
 #' It calculates prior CTS profile and covariance matrix from single-cell data. The output can serve as hyper-parameters in bMIND.
+#' Only genes with positive definite covariance matrix are outputted.
 #'
 #' @param sc single-cell count matrix, gene x cell.
 #' @param meta_sc data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`).
@@ -366,9 +364,6 @@ get_prior = function(sc, meta_sc) {
   meta_sc$sample = as.character(meta_sc$sample)
   sample = unique(meta_sc[, c('sample')])
   
-  library(data.table)
-  library(edgeR)
-  
   cell_type = sort(unique(meta_sc$cell_type))
   K = length(cell_type)
   
@@ -382,7 +377,6 @@ get_prior = function(sc, meta_sc) {
     cts[,j,id] = log2(cpm(cts[,j,id]) + 1) # make it log2 CPM + 1
   }
   
-  library(matrixcalc)
   cov = array(NA, dim = c(nrow(cts), K, K))
   rownames(cov) = rownames(sc)
   colnames(cov) = dimnames(cov)[[3]] = cell_type
@@ -390,7 +384,8 @@ get_prior = function(sc, meta_sc) {
     cov[i,,] = cov(cts[i,,], use = 'pairwise')
   }
   
-  cov <- cov[apply(cov, 1, is.positive.definite),,]
+  gene_pd = apply(cov, 1, is.positive.definite)
+  cov <- cov[gene_pd,,]
   
   profile = matrix(NA, nrow(sc), K)
   rownames(profile) = rownames(sc)
@@ -399,5 +394,5 @@ get_prior = function(sc, meta_sc) {
     profile[,i] = log2(cpm(rowMeans(sc[, meta_sc$cell_type == i])) + 1)
   }
   
-  return(list(profile = profile, covariance = cov)) # ctsExp = cts, 
+  return(list(profile = profile[gene_pd,], covariance = cov)) # ctsExp = cts, 
 }

@@ -18,6 +18,7 @@ A list containing
 }
 \description{
 It calculates prior CTS profile and covariance matrix from single-cell data. The output can serve as hyper-parameters in bMIND.
+Only genes with positive definite covariance matrix are outputted.
 }
 \references{
 Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior derived from single-cell data." 
