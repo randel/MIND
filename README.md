@@ -26,11 +26,12 @@ y = rbinom(n = nrow(frac), size = 1, prob = 0.5)
 colnames(frac) = gsub(' ', '.', colnames(frac))
 covariate = data.frame(c1 = rnorm(length(y)), c2 = rnorm(length(y)))
 
-deconv = bMIND2(bulk, frac, y = y, covariate = covariate, covariate_bulk = 'c1', covariate_cts = 'c2', np = T, noRE = F)
+deconv = bMIND2(bulk, frac, y = y, covariate = covariate, covariate_bulk = 'c1', covariate_cts = 'c2', 
+ np = T, noRE = F)
 ```
 
 **For detailed tutorial, please see the [PDF
-manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).**
+manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).** It covers how to get prior distributions using multi-sample scRNA-seq data.
 
 The cell type fraction can be pre-estimated using 1) non-negative least squares (NNLS), which requires a
 signature matrix derived from reference samples of single-cell RNA-seq data; 2) Bisque, which requires raw single-cell data.
