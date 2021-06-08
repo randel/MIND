@@ -372,7 +372,10 @@ get_prior = function(sc, meta_sc) {
   colnames(cts) = sample
   dimnames(cts)[[3]] = cell_type
   for(j in sample) {
-    for(k in dimnames(cts)[[3]]) cts[,j,k] = rowMeans(sc[, meta_sc$sample == j & meta_sc$cell_type == k])
+    for(k in dimnames(cts)[[3]]) {
+      id = which(meta_sc$sample == j & meta_sc$cell_type == k)
+      if(length(id) > 0) cts[,j,k] = rowMeans(sc[, id, drop = F])
+    }
     id = which(colMeans(is.na(cts[,j,])) == 0)
     cts[,j,id] = log2(cpm(cts[,j,id]) + 1) # make it log2 CPM + 1
   }
