@@ -87,7 +87,8 @@ bmind_all = function(X, W, y = NULL, mu = NULL, var_fe = NULL, var_fe_co = NULL,
                      V_re = NULL, sample_id = NULL, nu = 50, nitt = 1300, burnin = 300, thin = 1, noRE = T, np = F, ncore) {
   
   K = ncol(W)
-  colnames(W) = gsub(' ', '.', colnames(W))
+  colnames(W)[1] = gsub("[^0-9A-Za-z///' ]", "", colnames(W)[1], ignore.case = TRUE)
+  colnames(W)[1] = gsub(' ', '_', colnames(W)[1])
   
   if(is.null(rownames(X))) rownames(X) = 1:nrow(X)
   # if(is.null(rownames(mu))) rownames(mu) = rownames(X)
