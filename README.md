@@ -40,6 +40,6 @@ signature matrix derived from reference samples of single-cell RNA-seq data; 2) 
 
 ## Reference
 
-**bMIND**: Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell type-specific gene expression with prior derived from single-cell data." [_Genome Research_](https://genome.cshlp.org/content/early/2021/04/09/gr.268722.120.full.pdf) (2021).
+**bMIND**: Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell type-specific gene expression with prior derived from single-cell data." [_Genome Research_](https://genome.cshlp.org/content/31/10/1807.full.pdf) (2021) 31: 1807-1818.
 
 MIND (frequentist method): see https://github.com/randel/MIND/blob/master/MIND.md
