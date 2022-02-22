@@ -26,8 +26,12 @@ y = rbinom(n = nrow(frac), size = 1, prob = 0.5)
 covariate = data.frame(c1 = rnorm(length(y)), c2 = rnorm(length(y)))
 
 # please remove any dot/space in the first cell type name
-deconv = bMIND2(bulk, frac, y = y, covariate = covariate, covariate_bulk = 'c1', covariate_cts = 'c2', 
- np = T, noRE = F)
+
+# CTS-DE (np = TRUE: use non-informative prior)
+deconv = bMIND2(bulk, frac, y = y, covariate = covariate, covariate_bulk = 'c1', covariate_cts = 'c2', np = T)
+ 
+# estimate CTS expression
+deconv2 = bMIND(bulk, frac)
 ```
 
 ## Tutorials
