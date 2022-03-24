@@ -1,6 +1,6 @@
 #' The bMIND algorithm that considers Bayesian testing and covariates in the deconvolution model
 #'
-#' It calculates the Bayesian estimates of sample- and cell-type-specific (CTS) gene expression, via MCMC.
+#' It conducts Bayesian testing of cell-type-specific (CTS) differential gene expression analysis, via MCMC.
 #'
 #' @param bulk bulk gene expression (gene x sample).
 #' @param frac sample-specific cell type fraction (sample x cell type). If not specified (NULL), it will be estimated by non-negative least squares (NNLS) by 
@@ -8,7 +8,7 @@
 #' @param sample_id sample/subject ID vector. The default is that sample ID will be automatically provided for sample-level bMIND analysis, otherwise 
 #' subject ID should be provided for subject-level bMIND analysis. Note that the subject ID will be sorted in the output and different sample_id would 
 #' produce slightly different results in MCMCglmm.
-#' @param ncore number of cores to run in parallel for providing sample/subject-level CTS estimates. The default is all available cores.
+#' @param ncore number of cores to run in parallel. The default is all available cores.
 #' @param profile prior profile matrix (gene by cell type). Gene names should be in the same order of bulk, and cell type names should be in the same order
 #' as frac.
 #' @param profile_co prior profile matrix (gene by cell type) for controls. 
@@ -28,7 +28,6 @@
 #' @param covariate_bulk colnames of covariate denoting variables that affect bulk expression
 #' @param covariate_cts colnames of covariate denoting variables that affect CTS expression
 #' @param np option to use non-informative prior
-#' @param noRE option to not calculate sample-level CTS estimates
 #' @param max_samp max number of posterior samples to generate in testing. An adaptive procedure is used to increase nitt for those genes with p-values = 
 #' 1/number of posterior samples.
 #' @param frac_method method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
@@ -43,19 +42,18 @@
 #' 
 #' @return A list containing the output of the bMIND algorithm (some genes with error message in MCMCglmm will not be outputted, 
 #' e.g., with constant expression)
-#' \item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x sample).}
-#' \item{SE}{the standard error of cell-type-specific gene expression (gene x cell type x sample).}
 #' \item{coef}{the estimated coefficients matrix (gene x variables).}
-#' \item{frac}{the estimated cell type fractions (sample x cell type).}
+#' \item{frac}{the estimated cell type fractions (sample x cell type) if fractions are not provided.}
 #' \item{pval}{the p-values of CTS-DE testing (gene x cell type).}
 #' \item{qval}{the q-values of CTS-DE testing by BH FDR adjustment (gene x cell type).}
 #'
-#' @references Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior 
-#' derived from single-cell data." bioRxiv (2020).
-#' @export bMIND2
-bMIND2 = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NULL, covariance = NULL, 
+#' @export bmind_de
+#' 
+#' 
+
+bmind_de = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NULL, covariance = NULL, 
                   profile_co = NULL, covariance_co = NULL, profile_ca = NULL, covariance_ca = NULL, y = NULL, covariate = NULL, 
-                  covariate_bulk = NULL, covariate_cts= NULL, noRE = T, np = F, 
+                  covariate_bulk = NULL, covariate_cts= NULL, np = F, 
                   nu = 50, nitt = 1300, burnin = 300, thin = 1, max_samp = 1e6,
                   frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
   
@@ -67,12 +65,39 @@ bMIND2 = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = N
   
   if(is.null(ncore)) ncore = detectCores()
   if(is.null(y)) cts_est = bmind_all(X = bulk, W = frac, sample_id = sample_id, ncore = ncore, mu = profile, var_fe = covariance, 
-                                     covariate = covariate, covariate_bulk = covariate_bulk, covariate_cts = covariate_cts, np = np, noRE = noRE,
+                                     covariate = covariate, covariate_bulk = covariate_bulk, covariate_cts = covariate_cts, np = np, noRE = T,
                                      nu = nu, nitt = nitt, burnin = burnin, thin = thin) else
                                        cts_est = bmind_all(X = bulk, W = frac, sample_id = sample_id, ncore = ncore, mu = cbind(profile_co, profile_ca), 
                                                            var_fe_co = covariance_co, var_fe_ca = covariance_ca, y = y, max_samp = max_samp,
                                                            covariate = covariate, covariate_bulk = covariate_bulk, covariate_cts = covariate_cts, 
-                                                           np = np, noRE = noRE,
+                                                           np = np, noRE = T,
+                                                           nu = nu, nitt = nitt, burnin = burnin, thin = thin)
+                                     if(est_frac) cts_est$frac = frac
+                                     
+                                     return(cts_est)
+}
+
+
+bMIND2 = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NULL, covariance = NULL, 
+                  profile_co = NULL, covariance_co = NULL, profile_ca = NULL, covariance_ca = NULL, y = NULL, covariate = NULL, 
+                  covariate_bulk = NULL, covariate_cts= NULL, np = F, 
+                  nu = 50, nitt = 1300, burnin = 300, thin = 1, max_samp = 1e6,
+                  frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
+  
+  # check if bulk has genes with constant expression, exclude them, together with those constant genes in profile and covariance
+  
+  # estimate cell type fractions
+  if(is.null(frac)) est_frac = TRUE else est_frac = FALSE
+  if(est_frac) frac = est_frac_sc(bulk, sc_count, signature, signature_case, frac_method, case_bulk, sc_meta)
+  
+  if(is.null(ncore)) ncore = detectCores()
+  if(is.null(y)) cts_est = bmind_all(X = bulk, W = frac, sample_id = sample_id, ncore = ncore, mu = profile, var_fe = covariance, 
+                                     covariate = covariate, covariate_bulk = covariate_bulk, covariate_cts = covariate_cts, np = np, noRE = T,
+                                     nu = nu, nitt = nitt, burnin = burnin, thin = thin) else
+                                       cts_est = bmind_all(X = bulk, W = frac, sample_id = sample_id, ncore = ncore, mu = cbind(profile_co, profile_ca), 
+                                                           var_fe_co = covariance_co, var_fe_ca = covariance_ca, y = y, max_samp = max_samp,
+                                                           covariate = covariate, covariate_bulk = covariate_bulk, covariate_cts = covariate_cts, 
+                                                           np = np, noRE = T,
                                                            nu = nu, nitt = nitt, burnin = burnin, thin = thin)
                                      if(est_frac) cts_est$frac = frac
                                      

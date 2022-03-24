@@ -1,6 +1,6 @@
-#' The bMIND algorithm to estimate sample-level cell-type-specific expression and conduct CTS differential expression (DE) analysis
+#' The bMIND algorithm to estimate sample-level cell-type-specific expression
 #'
-#' It calculates the Bayesian estimates of sample- and cell-type-specific (CTS) gene expression, via MCMC. For all input, dim names are recommended if applicable.
+#' It calculates the Bayesian estimates of sample- and cell-type-specific (CTS) gene expression, via MCMC. For all input, dimension names are recommended if applicable.
 #'
 #' @param bulk bulk gene expression (gene x sample). We recommend log2-transformed data for better performance, except when using Bisque to estimate 
 #' cell type fractions, raw count is expected for Bisque. If the max(bulk) > 50, bulk will be transformed to log2(count per million + 1) 
@@ -21,9 +21,6 @@
 #' @param nitt number of MCMC iterations.
 #' @param thin thinning interval for MCMC.
 #' @param burnin burn-in iterations for MCMC.
-#' @param y binary (0-1) outcome/phenotype vector for CTS DE analysis (0 for controls, 1 for cases). Should be the same 
-#' length and order as sample_id or sort(unique(sample_id)) and row names of covariate.
-#' @param covariate matrix for covariates to be adjusted in CTS differential testing.
 #' @param frac_method method to be used for estimating cell type fractions, either 'NNLS' or 'Bisque'. 
 #' **All arguments starting from this one will be used to estimate cell-type fractions only, if those fractions are not pre-estimated.**
 #' @param sc_count sc/snRNA-seq raw count as reference for Bisque to estimate cell type fractions.
@@ -35,14 +32,12 @@
 #' separately.
 #' 
 #' @return A list containing the output of the bMIND algorithm (some genes with error message in MCMCglmm will not be outputted, 
-#' e.g., with constant expression)
+#' e.g., those genes with constant expression)
 #' \item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x sample).}
 #' \item{SE}{the standard error of cell-type-specific gene expression (gene x cell type x sample).}
 #' \item{Sigma_c}{the covariance matrix for the deconvolved cell-type-specific expression (gene x cell type x cell type).}
 #' \item{mu}{the estimated profile matrix (gene x cell type).}
-#' \item{frac}{the estimated cell type fractions (sample x cell type).}
-#' \item{pval}{the p-values of CTS-DE testing (cell type x gene).}
-#' \item{qval}{the q-values of CTS-DE testing by MANOVA and BH FDR adjustment (cell type x gene).}
+#' \item{frac}{the estimated cell type fractions (sample x cell type) if fractions are not provided.}
 #'
 #'
 #' @examples
@@ -70,6 +65,7 @@ bMIND = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NU
                  nu = 50, V_fe = NULL, nitt = 1300, burnin = 300, thin = 1, 
                  frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
   
+  # y and covariate are deprecated. Use bmind_de() instead.
   # check if bulk has genes with constant expression, exclude them, together with those genes in profile and covariance
   
   # estimate cell type fractions

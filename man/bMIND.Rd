@@ -2,7 +2,7 @@
 % Please edit documentation in R/bmind_func.r
 \name{bMIND}
 \alias{bMIND}
-\title{The bMIND algorithm to estimate sample-level cell-type-specific expression and conduct CTS differential expression (DE) analysis}
+\title{The bMIND algorithm to estimate sample-level cell-type-specific expression}
 \usage{
 bMIND(
   bulk,
@@ -11,8 +11,6 @@ bMIND(
   ncore = NULL,
   profile = NULL,
   covariance = NULL,
-  y = NULL,
-  covariate = NULL,
   nu = 50,
   V_fe = NULL,
   nitt = 1300,
@@ -46,11 +44,6 @@ as frac. If not specified (NULL), the bulk mean will be supplied.}
 \item{covariance}{prior covariance array (gene by cell type by cell type). Gene names should be in the same order of bulk, and cell type names should be 
 in the same order as frac. If not specified (NULL), bulk variance / sum(colMeans(frac)^2) will be supplied.}
 
-\item{y}{binary (0-1) outcome/phenotype vector for CTS DE analysis (0 for controls, 1 for cases). Should be the same 
-length and order as sample_id or sort(unique(sample_id)) and row names of covariate.}
-
-\item{covariate}{matrix for covariates to be adjusted in CTS differential testing.}
-
 \item{nu}{hyper-parameter for the prior covariance matrix. The larger the nu, the higher the certainty about the information in covariance, and the more 
 informative is the distribution. The default is 50.}
 
@@ -79,17 +72,15 @@ separately.}
 }
 \value{
 A list containing the output of the bMIND algorithm (some genes with error message in MCMCglmm will not be outputted, 
-e.g., with constant expression)
+e.g., those genes with constant expression)
 \item{A}{the deconvolved cell-type-specific gene expression (gene x cell type x sample).}
 \item{SE}{the standard error of cell-type-specific gene expression (gene x cell type x sample).}
 \item{Sigma_c}{the covariance matrix for the deconvolved cell-type-specific expression (gene x cell type x cell type).}
 \item{mu}{the estimated profile matrix (gene x cell type).}
-\item{frac}{the estimated cell type fractions (sample x cell type).}
-\item{pval}{the p-values of CTS-DE testing (cell type x gene).}
-\item{qval}{the q-values of CTS-DE testing by MANOVA and BH FDR adjustment (cell type x gene).}
+\item{frac}{the estimated cell type fractions (sample x cell type) if fractions are not provided.}
 }
 \description{
-It calculates the Bayesian estimates of sample- and cell-type-specific (CTS) gene expression, via MCMC. For all input, dim names are recommended if applicable.
+It calculates the Bayesian estimates of sample- and cell-type-specific (CTS) gene expression, via MCMC. For all input, dimension names are recommended if applicable.
 }
 \examples{
 
