@@ -99,21 +99,15 @@ frac = na.omit(apply(example$W, 3, as.vector))
 colnames(bulk) = rownames(frac) = 1:nrow(frac)
 
 # with provided cell type fractions
-deconv1 = bMIND(bulk, frac = frac, y = rbinom(n = nrow(frac), size = 1, prob = 0.5), 
-    ncore = 2)
+deconv1 = bMIND(bulk, frac = frac, ncore = 12)
 
-set.seed(1)
-data(signature)
-bulk = matrix(rnorm(300 * ncol(bulk), 10), ncol = ncol(bulk))
-rownames(bulk) = rownames(signature)[1:nrow(bulk)]
-colnames(bulk) = 1:ncol(bulk)
+# set.seed(1)
+# data(signature)
+# bulk = matrix(rnorm(300 * ncol(bulk), 10), ncol = ncol(bulk))
+# rownames(bulk) = rownames(signature)[1:nrow(bulk)]
+# colnames(bulk) = 1:ncol(bulk)
 
-# without provided cell type fractions
-deconv2 = bMIND(bulk, signature = signature[, -6], y = rbinom(n = nrow(frac), size = 1, 
-    prob = 0.5), ncore = 2)
+## without provided cell type fractions
+# deconv2 = bMIND(bulk, signature = signature[, -6], ncore = 12)
 
-}
-\references{
-Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior derived from single-cell data." 
-bioRxiv (2020).
 }
