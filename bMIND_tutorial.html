@@ -224,7 +224,7 @@ frac = est_frac(sig = prior$profile, bulk = log2(1+bulk))</code></pre>
 <h2>Use bMIND to estimate sample-level cell-type-specific expression</h2>
 <p>An example of running 20 genes.</p>
 <p>Here we use both log scale for bulk data and prior profile and covariance matrix. Make sure to check the same order of genes in bulk, profile, and covariance.</p>
-<pre class="r"><code>deconv = bMIND2(bulk = log2(1+bulk[rownames(prior$profile)[1:20],]), frac = frac, profile = prior$profile, covariance = prior$covariance, noRE = F, ncore = 20)</code></pre>
+<pre class="r"><code>deconv = bmind_de(bulk = log2(1+bulk[rownames(prior$profile)[1:20],]), frac = frac, profile = prior$profile, covariance = prior$covariance, ncore = 20)</code></pre>
 <p>Output:</p>
 <ul>
 <li><code>A</code>: the deconvolved cell-type-specific gene expression (gene x cell type x sample).</li>

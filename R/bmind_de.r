@@ -1,4 +1,4 @@
-#' The bMIND algorithm that considers Bayesian testing and covariates in the deconvolution model
+#' bMIND algorithm for cell type-specific differential expression analysis with prior derived from single-cell data
 #'
 #' It conducts Bayesian testing of cell-type-specific (CTS) differential gene expression analysis, via MCMC.
 #'

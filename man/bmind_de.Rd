@@ -2,7 +2,7 @@
 % Please edit documentation in R/bmind_de.r
 \name{bmind_de}
 \alias{bmind_de}
-\title{The bMIND algorithm that considers Bayesian testing and covariates in the deconvolution model}
+\title{bMIND algorithm for cell type-specific differential expression analysis with prior derived from single-cell data}
 \usage{
 bmind_de(
   bulk,
