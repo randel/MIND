@@ -347,9 +347,6 @@ pval2qval = function(pval, A, y, covariate = NULL) {
 #' \item{profile}{CTS profile matrix (gene x cell type), in log2(CPM + 1) scale.}
 #' \item{covariance}{CTS covariance matrix (gene x cell type x cell type).}
 #'
-#' @references Wang, Jiebiao, Kathryn Roeder, and Bernie Devlin. "Bayesian estimation of cell-type-specific gene expression per bulk sample with prior derived from single-cell data." 
-#' bioRxiv (2020).
-#' 
 #' @export get_prior
 #'            
 get_prior = function(sc, meta_sc) {

@@ -36,8 +36,7 @@ deconv2 = bMIND(bulk, frac)
 
 ## Tutorials
 
-**For detailes, please see the [tutorial](https://htmlpreview.github.io/?https://github.com/randel/MIND/blob/master/bMIND_tutorial.html) and [PDF
-manual](https://github.com/randel/MIND/blob/master/MIND-manual.pdf).** They cover how to get prior distributions using multi-sample scRNA-seq data.
+**For detailes, please see the [tutorial](https://htmlpreview.github.io/?https://github.com/randel/MIND/blob/master/bMIND_tutorial.html).** It covers how to get prior distributions using multi-sample scRNA-seq data.
 
 The cell type fraction can be pre-estimated using 1) non-negative least squares (NNLS), which requires a
 signature matrix derived from reference samples of single-cell RNA-seq data; 2) Bisque, which requires raw single-cell data.
