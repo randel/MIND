@@ -143,6 +143,22 @@ e.g., those genes with constant expression)</p>
 <span class="r-in"><span class="va">frac</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">example</span><span class="op">$</span><span class="va">W</span>, <span class="fl">3</span>, <span class="va">as.vector</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">bulk</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">frac</span><span class="op">)</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">frac</span><span class="op">)</span></span>
 <span class="r-in"></span>
+<span class="r-in"><span class="va">bulk</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              1        2       3        4        5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ANK2  4.698981 4.703759 4.88463 5.192639 4.820824</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> POGZ  4.296181 4.502559 4.42363 4.337839 4.102224</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TRIO  3.143821 3.007979 2.98249 3.508639 2.954794</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AKAP9 2.648231 2.303789 2.91275 2.900519 1.741124</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ASH1L 3.738681 3.646859 3.75403 4.000939 3.312794</span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">frac</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    astrocytes mature neurons immature neurons oligodendrocytes       OPC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.000000000     0.07947864        0.6593213      0.000000000 0.2612001</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.004001667     0.17504983        0.6031219      0.022518815 0.1953078</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.004323026     0.10218298        0.5877968      0.018830465 0.2868668</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.000000000     0.20181933        0.5692321      0.001399302 0.2275493</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.000000000     0.18349406        0.5851250      0.026766014 0.2046149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.005763292     0.07574323        0.7951380      0.000000000 0.1233555</span>
+<span class="r-in"></span>
 <span class="r-in"><span class="co"># with provided cell type fractions</span></span>
 <span class="r-in"><span class="va">deconv1</span> <span class="op">=</span> <span class="fu">bMIND</span><span class="op">(</span><span class="va">bulk</span>, frac <span class="op">=</span> <span class="va">frac</span>, ncore <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span>
 <span class="r-in"></span>

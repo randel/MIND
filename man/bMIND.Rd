@@ -89,6 +89,9 @@ bulk = t(na.omit(apply(example$X, 1, as.vector)))
 frac = na.omit(apply(example$W, 3, as.vector))
 colnames(bulk) = rownames(frac) = 1:nrow(frac)
 
+bulk[1:5, 1:5]
+head(frac)
+
 # with provided cell type fractions
 deconv1 = bMIND(bulk, frac = frac, ncore = 12)
 

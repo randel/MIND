@@ -108,3 +108,20 @@ e.g., with constant expression)
 \description{
 It conducts Bayesian testing of cell-type-specific (CTS) differential gene expression analysis, via MCMC.
 }
+
+\examples{
+
+data(example)
+bulk = t(na.omit(apply(example$X, 1, as.vector)))
+frac = na.omit(apply(example$W, 3, as.vector))
+colnames(bulk) = rownames(frac) = 1:nrow(frac)
+y = rbinom(n = nrow(frac), size = 1, prob = 0.5)
+covariate = data.frame(c1 = rnorm(length(y)), c2 = rnorm(length(y)))
+
+bulk[1:5, 1:5]
+head(frac)
+
+# CTS-DE (np = TRUE: use non-informative prior)
+deconv = bmind_de(bulk, frac, y = y, covariate = covariate, covariate_bulk = 'c1', covariate_cts = 'c2', np = T)
+
+}
