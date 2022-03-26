@@ -67,7 +67,7 @@ bMIND = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NU
   
   # y and covariate are deprecated. Use bmind_de() instead.
   # check if bulk has genes with constant expression, exclude them, together with those genes in profile and covariance
-  
+  bulk = as.matrix(bulk)
   # estimate cell type fractions
   if(is.null(frac)) est_frac = TRUE else est_frac = FALSE
   if(est_frac) frac = est_frac_sc(bulk, sc_count, signature, signature_case, frac_method, case_bulk, sc_meta)
@@ -341,7 +341,10 @@ pval2qval = function(pval, A, y, covariate = NULL) {
 #' Only genes with positive definite covariance matrix are outputted.
 #'
 #' @param sc single-cell count matrix, gene x cell.
-#' @param meta_sc data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`).
+#' @param sample variable for sample ID. It is used to generate pseudo-bulk data and calculate cell-type covariance matrix across samples for each gene.
+#' @param cell_type variable for cell type labels.
+#' @param meta_sc data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`). Not required if sample and cell_type are provided.
+#' @param filter_pd option to filer out genes without positive-definite cell-type covariance matrix, default is TRUE. 
 #' 
 #' @return A list containing
 #' \item{profile}{CTS profile matrix (gene x cell type), in log2(CPM + 1) scale.}
@@ -349,8 +352,9 @@ pval2qval = function(pval, A, y, covariate = NULL) {
 #'
 #' @export get_prior
 #'            
-get_prior = function(sc, meta_sc) {
+get_prior = function(sc, sample = NULL, cell_type = NULL, meta_sc = NULL, filter_pd = T) {
   
+  if(is.null(meta_sc)) meta_sc = data.frame(sample = sample, cell_type = cell_type)
   meta_sc$sample = as.character(meta_sc$sample)
   sample = unique(meta_sc[, c('sample')])
   
@@ -377,7 +381,11 @@ get_prior = function(sc, meta_sc) {
     cov[i,,] = cov(cts[i,,], use = 'pairwise')
   }
   
-  gene_pd = apply(cov, 1, is.positive.definite)
+  if(filter_pd) {
+    gene_pd = apply(cov, 1, is.positive.definite)
+    print(paste(sum(1-gene_pd), 'genes are filtered out because cell-type covariance matrix is not positive-definite (PD);'))
+    print('The filtering can be disabled by setting filter_pd = FALSE. Note the prior cell-type covariance matrix for each gene is required to be PD.')
+  } else gene_pd = 1:nrow(cov)
   cov <- cov[gene_pd,,]
   
   profile = matrix(NA, nrow(sc), K)

@@ -52,15 +52,21 @@ Only genes with positive definite covariance matrix are outputted.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">get_prior</span><span class="op">(</span><span class="va">sc</span>, <span class="va">meta_sc</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">get_prior</span><span class="op">(</span><span class="va">sc</span>, sample <span class="op">=</span> <span class="cn">NULL</span>, cell_type <span class="op">=</span> <span class="cn">NULL</span>, meta_sc <span class="op">=</span> <span class="cn">NULL</span>, filter_pd <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>sc</dt>
 <dd><p>single-cell count matrix, gene x cell.</p></dd>
+<dt>sample</dt>
+<dd><p>variable for sample ID. It is used to generate pseudo-bulk data and calculate cell-type covariance matrix across samples for each gene.</p></dd>
+<dt>cell_type</dt>
+<dd><p>variable for cell type labels.</p></dd>
 <dt>meta_sc</dt>
-<dd><p>data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`).</p></dd>
+<dd><p>data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`). Not required if sample and cell_type are provided.</p></dd>
+<dt>filter_pd</dt>
+<dd><p>option to filer out genes without positive-definite cell-type covariance matrix, default is TRUE.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -71,6 +77,63 @@ Only genes with positive definite covariance matrix are outputted.</p>
 <dd><p>CTS covariance matrix (gene x cell type x cell type).</p></dd>
 </dl></div>
 
+    <div id="ref-examples">
+    <h2>Examples</h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">scRNAseq</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="va">dar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scRNAseq/man/DarmanisBrainData.html" class="external-link">DarmanisBrainData</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># focus on adult cells with non-hybrid lables</span></span>
+<span class="r-in"><span class="va">dar</span> <span class="op">=</span> <span class="va">dar</span><span class="op">[</span>, <span class="op">!</span><span class="va">dar</span><span class="op">$</span><span class="va">cell.type</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'fetal_quiescent'</span>, <span class="st">'fetal_replicating'</span>, <span class="st">'hybrid'</span><span class="op">)</span><span class="op">]</span></span>
+<span class="r-in"><span class="va">dar</span> <span class="op">=</span> <span class="va">dar</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/assays.html" class="external-link">counts</a></span><span class="op">(</span><span class="va">dar</span><span class="op">)</span><span class="op">)</span><span class="op">!=</span><span class="fl">0</span>,<span class="op">]</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">dar</span><span class="op">$</span><span class="va">cell.type</span>, <span class="va">dar</span><span class="op">$</span><span class="va">experiment_sample_name</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    AB_S1 AB_S11 AB_S2 AB_S3 AB_S4 AB_S5 AB_S7 AB_S8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   OPC                  0      0     0     0     0     0     0    18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   astrocytes          11      7     2     0    38     0     3     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   endothelial          2      1     0     1     0    16     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   microglia            5      1     2     0     0     1     0     7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   neurons              6     50     1     2    19    18    35     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   oligodendrocytes     0      1     0     0     1     9    12    15</span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># the error is caused by OPC is only from one sample</span></span>
+<span class="r-in"><span class="va">prior</span> <span class="op">=</span> <span class="fu">get_prior</span><span class="op">(</span>sc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/assays.html" class="external-link">counts</a></span><span class="op">(</span><span class="va">dar</span><span class="op">)</span>, sample <span class="op">=</span> <span class="va">dar</span><span class="op">$</span><span class="va">experiment_sample_name</span>, cell_type <span class="op">=</span> <span class="va">dar</span><span class="op">$</span><span class="va">cell.type</span><span class="op">)</span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in if (!is.symmetric.matrix(x)) stop("argument x is not a symmetric matrix"):</span> missing value where TRUE/FALSE needed</span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># drop cells only from one sample</span></span>
+<span class="r-in"><span class="va">dar</span> <span class="op">=</span> <span class="va">dar</span><span class="op">[</span>, <span class="op">!</span><span class="va">dar</span><span class="op">$</span><span class="va">cell.type</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'OPC'</span><span class="op">)</span><span class="op">]</span></span>
+<span class="r-in"><span class="va">dar</span> <span class="op">=</span> <span class="va">dar</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/assays.html" class="external-link">counts</a></span><span class="op">(</span><span class="va">dar</span><span class="op">)</span><span class="op">)</span><span class="op">!=</span><span class="fl">0</span>,<span class="op">]</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">prior</span> <span class="op">=</span> <span class="fu">get_prior</span><span class="op">(</span>sc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/assays.html" class="external-link">counts</a></span><span class="op">(</span><span class="va">dar</span><span class="op">)</span>, sample <span class="op">=</span> <span class="va">dar</span><span class="op">$</span><span class="va">experiment_sample_name</span>, cell_type <span class="op">=</span> <span class="va">dar</span><span class="op">$</span><span class="va">cell.type</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "20976 genes are filtered out because cell-type covariance matrix is not positive-definite (PD);"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "The filtering can be disabled by setting filter_pd = FALSE. Note the prior cell-type covariance matrix for each gene is required to be PD."</span>
+<span class="r-in"></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">prior</span><span class="op">$</span><span class="va">profile</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 328   5</span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">prior</span><span class="op">$</span><span class="va">profile</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        astrocytes endothelial microglia  neurons oligodendrocytes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ABL1    3.9444509    6.685126  1.425422 4.350492       5.68671293</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ACBD5   6.5678615    3.946924  4.355075 5.738703       6.81941440</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ADARB1  4.3358691    5.254009  1.505483 4.783873       0.05764407</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AFTPH   5.1665212    7.679581  7.632321 7.114015       4.65149718</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AGPAT4  0.5202005    2.990566  1.051626 6.240137       6.80423368</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AGT    10.0188773    6.699810  2.403666 4.833541       4.00746237</span>
+<span class="r-in"></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">prior</span><span class="op">$</span><span class="va">covariance</span><span class="op">)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 328   5   5</span>
+<span class="r-in"><span class="va">prior</span><span class="op">$</span><span class="va">covariance</span><span class="op">[</span><span class="fl">1</span>,,<span class="op">]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  astrocytes endothelial  microglia   neurons oligodendrocytes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> astrocytes         5.027003   -2.017456 -1.0778568 -2.120282       -2.0876742</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> endothelial       -2.017456   19.984533  0.0000000  7.774008      -10.2333931</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> microglia         -1.077857    0.000000  0.9088396  0.000000       -0.2422067</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> neurons           -2.120282    7.774008  0.0000000  5.120625       -3.3872491</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> oligodendrocytes  -2.087674  -10.233393 -0.2422067 -3.387249       10.5114827</span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># Note bMIND requires positive-definite prior covariance matrix</span></span>
+<span class="r-in"><span class="va">prior_all</span> <span class="op">=</span> <span class="fu">get_prior</span><span class="op">(</span>sc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/assays.html" class="external-link">counts</a></span><span class="op">(</span><span class="va">dar</span><span class="op">)</span>, sample <span class="op">=</span> <span class="va">dar</span><span class="op">$</span><span class="va">experiment_sample_name</span>, cell_type <span class="op">=</span> <span class="va">dar</span><span class="op">$</span><span class="va">cell.type</span>, filter_pd <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
+</code></pre></div>
+    </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top"><h2 data-toc-skip>Contents</h2>

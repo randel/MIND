@@ -4,12 +4,14 @@
 \alias{get_prior}
 \title{get prior CTS profile and covariance matrix from single-cell data}
 \usage{
-get_prior(sc, meta_sc)
+get_prior(sc, sample = NULL, cell_type = NULL, meta_sc = NULL, filter_pd = T)
 }
 \arguments{
 \item{sc}{single-cell count matrix, gene x cell.}
-
-\item{meta_sc}{data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`).}
+\item{sample}{variable for sample ID. It is used to generate pseudo-bulk data and calculate cell-type covariance matrix across samples for each gene.}
+\item{cell_type}{variable for cell type labels.}
+\item{meta_sc}{data.frame for meta of cells (cell x features, including columns `sample` (sample ID), `cell_type`). Not required if sample and cell_type are provided.}
+\item{filter_pd}{option to filer out genes without positive-definite cell-type covariance matrix, default is TRUE. }
 }
 \value{
 A list containing
@@ -19,4 +21,33 @@ A list containing
 \description{
 It calculates prior CTS profile and covariance matrix from single-cell data. The output can serve as hyper-parameters in bMIND.
 Only genes with positive definite covariance matrix are outputted.
+}
+\examples{
+suppressMessages(library(scRNAseq))
+
+suppressMessages(dar <- DarmanisBrainData())
+
+# focus on adult cells with non-hybrid lables
+dar = dar[, !dar$cell.type \%in\% c('fetal_quiescent', 'fetal_replicating', 'hybrid')]
+dar = dar[rowSums(counts(dar))!=0,]
+
+table(dar$cell.type, dar$experiment_sample_name)
+
+# the error is caused by OPC is only from one sample
+prior = get_prior(sc = counts(dar), sample = dar$experiment_sample_name, cell_type = dar$cell.type)
+
+# drop cells only from one sample
+dar = dar[, !dar$cell.type \%in\% c('OPC')]
+dar = dar[rowSums(counts(dar))!=0,]
+
+prior = get_prior(sc = counts(dar), sample = dar$experiment_sample_name, cell_type = dar$cell.type)
+
+dim(prior$profile)
+head(prior$profile)
+
+dim(prior$covariance)
+prior$covariance[1,,]
+
+# Note bMIND requires positive-definite prior covariance matrix
+prior_all = get_prior(sc = counts(dar), sample = dar$experiment_sample_name, cell_type = dar$cell.type, filter_pd = F)
 }

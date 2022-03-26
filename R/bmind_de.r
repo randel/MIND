@@ -58,7 +58,7 @@ bmind_de = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile =
                   frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
   
   # check if bulk has genes with constant expression, exclude them, together with those constant genes in profile and covariance
-  
+  bulk = as.matrix(bulk)
   # estimate cell type fractions
   if(is.null(frac)) est_frac = TRUE else est_frac = FALSE
   if(est_frac) frac = est_frac_sc(bulk, sc_count, signature, signature_case, frac_method, case_bulk, sc_meta)
@@ -85,7 +85,7 @@ bMIND2 = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = N
                   frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
   
   # check if bulk has genes with constant expression, exclude them, together with those constant genes in profile and covariance
-  
+  bulk = as.matrix(bulk)
   # estimate cell type fractions
   if(is.null(frac)) est_frac = TRUE else est_frac = FALSE
   if(est_frac) frac = est_frac_sc(bulk, sc_count, signature, signature_case, frac_method, case_bulk, sc_meta)
