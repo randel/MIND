@@ -2,7 +2,7 @@
 % Please edit documentation in R/deconv_em_func.r
 \name{est_frac}
 \alias{est_frac}
-\title{Estimating cell type fractions with a signature matrix using non-negative least squares (NNLS) or Bisque}
+\title{Estimating cell type fractions with a signature matrix using non-negative least squares (NNLS)}
 \usage{
 est_frac(sig, bulk)
 }
