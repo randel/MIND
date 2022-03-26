@@ -68,7 +68,7 @@ length and order as sample_id or sort(unique(sample_id)) and row names of covari
 
 \item{covariate_cts}{colnames of covariate denoting variables that affect CTS expression}
 
-\item{np}{option to use non-informative prior}
+\item{np}{option to use non-informative prior. Default is FALSE}
 
 \item{nu}{hyper-parameter for the prior covariance matrix. The larger the nu, the higher the certainty about the information in covariance, and the more 
 informative is the distribution. The default is 50.}
@@ -124,4 +124,6 @@ head(frac)
 # CTS-DE (np = TRUE: use non-informative prior)
 deconv = bmind_de(bulk, frac, y = y, covariate = covariate, covariate_bulk = 'c1', covariate_cts = 'c2', np = T)
 
+# If you have informative prior, use get_prior() in https://randel.github.io/MIND/reference/get_prior.html to generate prior `profile` and `covariance` matrices. You can do this sepately for cases (profile_ca, covariance_ca) and controls (profile_co, covariance_co). Note that covariance matrix is required to be positive-definite.
+deconv = bmind_de(bulk, frac, np = FALSE)
 }

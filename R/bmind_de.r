@@ -57,6 +57,19 @@ bmind_de = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile =
                   nu = 50, nitt = 1300, burnin = 300, thin = 1, max_samp = 1e6,
                   frac_method = NULL, sc_count = NULL, sc_meta = NULL, signature = NULL, signature_case = NULL, case_bulk = NULL) {
   
+  # check to avoid errors "fixed effect mu prior is the wrong dimension" or "'data' must be of a vector type, was 'NULL'"
+  if(!np) {
+    if(is.null(profile) & is.null(profile_ca) & is.null(profile_co)) {
+      print('Prior profile matrix is required, otherwise set np = TRUE to use non-informative pror')
+      stop()
+    }
+      
+    if(is.null(covariance) & is.null(covariance_ca) & is.null(covariance_co)) {
+      print('Prior covariance matrix is required, otherwise set np = TRUE to use non-informative pror')
+      stop()
+    }
+  }
+  
   # check if bulk has genes with constant expression, exclude them, together with those constant genes in profile and covariance
   bulk = as.matrix(bulk)
   # estimate cell type fractions
