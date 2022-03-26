@@ -2,7 +2,7 @@
 % Please edit documentation in R/deconv_em_func.r
 \name{est_frac}
 \alias{est_frac}
-\title{Estimating cell type fractions with a signature matrix using non-negative least squares (NNLS)}
+\title{Estimating cell type fractions with a signature matrix using non-negative least squares (NNLS) or Bisque}
 \usage{
 est_frac(sig, bulk)
 }
@@ -17,4 +17,41 @@ A matrix containing the estimated cell type fractions (tissue sample x cell type
 \description{
 It calls the nnls package to estimate cell type fractions of bulk data using a pre-estimated signature matrix. It is recommended to 
 keep the row and column names of the input data.
+}
+\examples{
+# Reading GTEx brain data: from read count to CPM (count per million)
+library(data.table)
+gtex_sample = read.delim('https://storage.googleapis.com/gtex_analysis_v7/annotations/GTEx_v7_Annotations_SampleAttributesDS.txt', header = T, stringsAsFactors = F)
+gtex_sample = gtex_sample[gtex_sample$SMTS == 'Brain',]
+
+download.file('https://storage.googleapis.com/gtex_analysis_v7/rna_seq_data/GTEx_Analysis_2016-01-15_v7_RNASeQCv1.1.8_gene_reads.gct.gz', 'GTEx_Analysis_2016-01-15_v7_RNASeQCv1.1.8_gene_reads.gct.gz')
+rnaseq_sample_id = fread('GTEx_Analysis_2016-01-15_v7_RNASeQCv1.1.8_gene_reads.gct.gz', header = T, skip = 2, nrows = 1)
+gtex_sample = gtex_sample[gtex_sample$SAMPID \%in\% colnames(rnaseq_sample_id),]
+
+# read count
+gtex_count <- fread('GTEx_Analysis_2016-01-15_v7_RNASeQCv1.1.8_gene_reads.gct.gz', header = T, skip = 2, select = c('Description', gtex_sample$SAMPID))
+gene_name = gtex_count$Description
+gtex_count = as.matrix(as.data.frame(gtex_count[,-1]))
+rownames(gtex_count) = gene_name
+gtex_cpm = apply(gtex_count, 2, function(x) x/sum(x)*1e6)
+dim(gtex_cpm)
+gtex_cpm[1:5, 1:2]
+
+# Reading the signature matrix
+signature = read.csv('https://raw.githubusercontent.com/randel/MIND/master/data/Signature_matrix_Darmanis.csv', row.names = 1)
+dim(signature)
+head(signature)
+
+# Running est_frac()
+sig = log2(as.matrix(signature) + 1)
+bulk = log2(gtex_cpm[rownames(sig),] + 1)
+
+cell_fraction = est_frac(sig, bulk)
+
+# heatmap of the average cell fraction for each brain region: using brain-region-specific reference is recommended
+region = substr(gtex_sample$SMTSD, 9, 100)
+frac_region = apply(cell_fraction, 2, function(x) tapply(x, region, mean))
+
+suppressMessages(library(NMF))
+aheatmap(frac_region, color = 'Blues', treeheight = 0)
 }
