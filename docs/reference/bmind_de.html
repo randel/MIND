@@ -190,9 +190,9 @@ e.g., with constant expression)</p>
 <span class="r-in"><span class="va">deconv</span> <span class="op">=</span> <span class="fu">bmind_de</span><span class="op">(</span><span class="va">bulk</span>, <span class="va">frac</span>, y <span class="op">=</span> <span class="va">y</span>, covariate <span class="op">=</span> <span class="va">covariate</span>, covariate_bulk <span class="op">=</span> <span class="st">'c1'</span>, covariate_cts <span class="op">=</span> <span class="st">'c2'</span>, np <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
 <span class="r-in"></span>
 <span class="r-in"><span class="co"># If you have informative prior, use get_prior() in https://randel.github.io/MIND/reference/get_prior.html to generate prior `profile` and `covariance` matrices. You can do this sepately for cases (profile_ca, covariance_ca) and controls (profile_co, covariance_co). Note that covariance matrix is required to be positive-definite.</span></span>
-<span class="r-in"><span class="va">deconv</span> <span class="op">=</span> <span class="fu">bmind_de</span><span class="op">(</span><span class="va">bulk</span>, <span class="va">frac</span>, np <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
+<span class="r-in"><span class="va">deconv</span> <span class="op">=</span> <span class="fu">bmind_de</span><span class="op">(</span><span class="va">bulk</span>, <span class="va">frac</span>, np <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Prior profile matrix is required, otherwise set np = TRUE to use non-informative pror"</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in bmind_de(bulk, frac, np = F):</span> </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in bmind_de(bulk, frac, np = FALSE):</span> </span>
 </code></pre></div>
     </div>
   </div>

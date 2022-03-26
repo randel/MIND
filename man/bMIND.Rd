@@ -101,7 +101,8 @@ deconv1 = bMIND(bulk, frac = frac, ncore = 12)
 # rownames(bulk) = rownames(signature)[1:nrow(bulk)]
 # colnames(bulk) = 1:ncol(bulk)
 
-## without provided cell type fractions
+## without provided cell type fractions: use built-in deconvolution methods NNLS or Bisque to estimate fractions
 # deconv2 = bMIND(bulk, signature = signature[, -6], ncore = 12)
 
+# If you have informative prior, use get_prior() in https://randel.github.io/MIND/reference/get_prior.html to generate prior `profile` and `covariance` matrices. Note that covariance matrix is required to be positive-definite.
 }
