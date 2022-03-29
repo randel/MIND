@@ -2,7 +2,7 @@
 % Please edit documentation in R/bmind_func.r
 \name{get_prior}
 \alias{get_prior}
-\title{get prior CTS profile and covariance matrix from single-cell data}
+\title{Get prior CTS profile and covariance matrix from single-cell data}
 \usage{
 get_prior(sc, sample = NULL, cell_type = NULL, meta_sc = NULL, filter_pd = T)
 }
