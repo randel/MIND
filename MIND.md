@@ -1,5 +1,5 @@
 # MIND: using multiple measurements of tissue to estimate subject-and cell-type-specific gene expression
-![](man/MIND.png)
+![](man/figures/MIND.png)
 
 
 ## Example
